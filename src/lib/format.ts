@@ -33,6 +33,23 @@ export function formatDate(value: string | null | undefined): string {
   return dateOnly.format(new Date(value));
 }
 
+/** Idade em anos completos a partir de uma data só-data (meia-noite UTC). */
+export function ageFromBirthDate(value: string | null | undefined, today = new Date()): number | null {
+  if (!value) return null;
+  const birth = new Date(value);
+  let age = today.getFullYear() - birth.getUTCFullYear();
+  const beforeBirthday =
+    today.getMonth() < birth.getUTCMonth() ||
+    (today.getMonth() === birth.getUTCMonth() && today.getDate() < birth.getUTCDate());
+  if (beforeBirthday) age -= 1;
+  return age;
+}
+
+/** "2026-10-01T00:00:00.000Z" → "2026-10-01" (valor para <input type="date">). */
+export function toDateInputValue(value: string | null | undefined): string {
+  return value ? value.slice(0, 10) : '';
+}
+
 /** Data e hora no fuso local do navegador. */
 export function formatDateTime(value: string | null | undefined): string {
   if (!value) return '';

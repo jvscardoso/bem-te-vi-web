@@ -13,6 +13,10 @@ import { HomePage } from '@/pages/HomePage';
 import { LoginPage } from '@/pages/LoginPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { PlaceholderPage } from '@/pages/PlaceholderPage';
+import { PatientDetailPage } from '@/pages/patients/PatientDetailPage';
+import { PatientFormPage } from '@/pages/patients/PatientFormPage';
+import { PatientsListPage } from '@/pages/patients/PatientsListPage';
+import { RemovedPatientsPage } from '@/pages/patients/RemovedPatientsPage';
 import { SignupPage } from '@/pages/SignupPage';
 
 export const router = createBrowserRouter([
@@ -42,7 +46,18 @@ export const router = createBrowserRouter([
               },
               {
                 element: <RequirePermission permission="patients:read" />,
-                children: [{ path: '/pacientes', element: <PlaceholderPage title="Pacientes" /> }],
+                children: [
+                  { path: '/pacientes', element: <PatientsListPage /> },
+                  { path: '/pacientes/:id', element: <PatientDetailPage /> },
+                  {
+                    element: <RequirePermission permission="patients:write" />,
+                    children: [
+                      { path: '/pacientes/novo', element: <PatientFormPage /> },
+                      { path: '/pacientes/removidos', element: <RemovedPatientsPage /> },
+                      { path: '/pacientes/:id/editar', element: <PatientFormPage /> },
+                    ],
+                  },
+                ],
               },
               {
                 element: <RequirePermission permission="billing:read" />,

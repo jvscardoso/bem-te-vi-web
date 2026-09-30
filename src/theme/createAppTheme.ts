@@ -1,4 +1,5 @@
 import { createTheme } from '@mui/material/styles';
+import { ptBR } from '@mui/material/locale';
 
 // Tema padrão do bem-te-vi (usado quando a clínica não definiu cores).
 export const DEFAULT_PRIMARY = '#2F5D50';
@@ -33,5 +34,5 @@ export function createAppTheme({ primaryColor, secondaryColor }: ThemeColors = {
       MuiPaper: { defaultProps: { elevation: 0 }, styleOverrides: { outlined: { borderColor: '#E3E6EA' } } },
       MuiAppBar: { defaultProps: { elevation: 0, color: 'inherit' } },
     },
-  });
+  }, ptBR);
 }

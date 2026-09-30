@@ -24,3 +24,10 @@ export function useAuth(): AuthContextValue {
   if (!context) throw new Error('useAuth precisa estar dentro de <AuthProvider>');
   return context;
 }
+
+/** Tenant do usuário logado — só para telas atrás de <RequireAuth>. */
+export function useTenantId(): string {
+  const { user } = useAuth();
+  if (!user) throw new Error('useTenantId exige usuário autenticado');
+  return user.tenantId;
+}
