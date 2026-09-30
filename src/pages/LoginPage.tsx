@@ -1,0 +1,95 @@
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Link as RouterLink, useLocation, useNavigate, type Location } from 'react-router';
+import { Alert, Box, Button, Link, Stack, TextField, Typography } from '@mui/material';
+import { useAuth } from '@/auth/AuthContext';
+import { session } from '@/auth/session';
+import { BrandMark } from '@/components/BrandMark';
+import { ErrorMessages } from '@/components/ErrorMessages';
+import { PasswordField } from '@/components/PasswordField';
+import { PublicCardLayout } from '@/layouts/PublicCardLayout';
+import { muiField } from '@/lib/form';
+import { useBranding } from '@/theme/BrandingContext';
+
+const schema = z.object({
+  email: z.email('Informe um email válido'),
+  password: z.string().min(1, 'Informe a senha'),
+});
+
+type FormValues = z.infer<typeof schema>;
+
+export function LoginPage() {
+  const { login } = useAuth();
+  const { status: brandingStatus } = useBranding();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [submitError, setSubmitError] = useState<unknown>(null);
+  const [logoutReason] = useState(session.getLogoutReason);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: { email: '', password: '' } });
+
+  const onSubmit = handleSubmit(async ({ email, password }) => {
+    setSubmitError(null);
+    try {
+      await login(email.trim(), password);
+      const from = (location.state as { from?: Location } | null)?.from;
+      navigate(from ? `${from.pathname}${from.search}` : '/', { replace: true });
+    } catch (error) {
+      setSubmitError(error);
+    }
+  });
+
+  return (
+    <PublicCardLayout>
+      <Stack spacing={3} component="form" onSubmit={onSubmit} noValidate>
+        <Stack spacing={2} sx={{ alignItems: 'center' }}>
+          <BrandMark size={56} hideName />
+          <BrandTitle />
+        </Stack>
+
+        {logoutReason === 'expired' && !submitError && (
+          <Alert severity="info">Sua sessão foi encerrada. Entre novamente para continuar.</Alert>
+        )}
+        <ErrorMessages error={submitError} />
+
+        <TextField label="Email" type="email" autoComplete="username" autoFocus {...muiField(register('email'), errors.email)} />
+        <PasswordField label="Senha" autoComplete="current-password" {...muiField(register('password'), errors.password)} />
+
+        <Button type="submit" variant="contained" size="large" loading={isSubmitting}>
+          Entrar
+        </Button>
+
+        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
+          Esqueceu a senha? Peça ao administrador da clínica para redefini-la.
+        </Typography>
+
+        {brandingStatus !== 'found' && (
+          <Typography variant="body2" sx={{ textAlign: 'center' }}>
+            Ainda não usa o bem-te-vi?{' '}
+            <Link component={RouterLink} to="/cadastro">
+              Cadastre sua clínica
+            </Link>
+          </Typography>
+        )}
+      </Stack>
+    </PublicCardLayout>
+  );
+}
+
+function BrandTitle() {
+  const { status, displayName } = useBranding();
+  return (
+    <Box sx={{ textAlign: 'center' }}>
+      <Typography variant="h5" component="h1" sx={{ fontWeight: 700 }}>
+        {displayName}
+      </Typography>
+      <Typography color="text.secondary">{status === 'found' ? 'Acesse sua conta' : 'Gestão de clínicas'}</Typography>
+    </Box>
+  );
+}

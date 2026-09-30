@@ -1,0 +1,13 @@
+node_modules
+dist
+*.local
+.env
+.env.*
+!.env.example
+.vite
+*.log
+.DS_Store
+.idea/workspace.xml
+
+# Documento interno de regras de negócio (não versionado)
+regras-de-negocio.md
