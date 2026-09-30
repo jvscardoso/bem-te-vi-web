@@ -18,6 +18,7 @@ import { isApiError } from '@/lib/errors';
 import { ageFromBirthDate, formatCpf, formatDate } from '@/lib/format';
 import { maskCep } from '@/lib/masks';
 import { PatientNotFound } from './PatientNotFound';
+import { PatientAnamnesisTab } from './anamnesis/PatientAnamnesisTab';
 
 interface TabDef {
   value: string;
@@ -96,6 +97,8 @@ export function PatientDetailPage() {
 
       {tab === 'dados' ? (
         <PatientData patient={patient} />
+      ) : tab === 'anamneses' ? (
+        <PatientAnamnesisTab patient={patient} />
       ) : (
         <Paper variant="outlined">
           <EmptyState title="Em construção" description="Esta seção será entregue nas próximas etapas." />

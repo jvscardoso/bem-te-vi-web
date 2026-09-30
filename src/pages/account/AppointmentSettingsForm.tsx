@@ -62,7 +62,6 @@ export function AppointmentSettingsForm({ tenantId, userId }: { tenantId: UUID; 
     <Stack spacing={2} component="form" onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
       <TextField
         label="Minha duração padrão"
-        inputMode="numeric"
         placeholder="Padrão da clínica"
         sx={{ maxWidth: 320 }}
         {...muiField(register('duration'), errors.duration)}
@@ -75,6 +74,7 @@ export function AppointmentSettingsForm({ tenantId, userId }: { tenantId: UUID; 
         slotProps={{
           // Rótulo sempre no alto: o valor chega via reset() e o placeholder precisa aparecer.
           inputLabel: { shrink: true },
+          htmlInput: { inputMode: 'numeric' },
           input: { endAdornment: <InputAdornment position="end">min</InputAdornment> },
         }}
       />

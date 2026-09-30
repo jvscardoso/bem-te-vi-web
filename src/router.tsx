@@ -13,6 +13,9 @@ import { HomePage } from '@/pages/HomePage';
 import { LoginPage } from '@/pages/LoginPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { PlaceholderPage } from '@/pages/PlaceholderPage';
+import { TemplateEditorPage } from '@/pages/anamnesis/templates/TemplateEditorPage';
+import { TemplatesListPage } from '@/pages/anamnesis/templates/TemplatesListPage';
+import { FillAnamnesisPage } from '@/pages/patients/anamnesis/FillAnamnesisPage';
 import { PatientDetailPage } from '@/pages/patients/PatientDetailPage';
 import { PatientFormPage } from '@/pages/patients/PatientFormPage';
 import { PatientsListPage } from '@/pages/patients/PatientsListPage';
@@ -55,6 +58,7 @@ export const router = createBrowserRouter([
                       { path: '/pacientes/novo', element: <PatientFormPage /> },
                       { path: '/pacientes/removidos', element: <RemovedPatientsPage /> },
                       { path: '/pacientes/:id/editar', element: <PatientFormPage /> },
+                      { path: '/pacientes/:id/anamneses/nova', element: <FillAnamnesisPage /> },
                     ],
                   },
                 ],
@@ -66,7 +70,9 @@ export const router = createBrowserRouter([
               {
                 element: <RequirePermission permission="anamnesis_templates:manage" />,
                 children: [
-                  { path: '/anamnese/formularios', element: <PlaceholderPage title="Formulários de anamnese" /> },
+                  { path: '/anamnese/formularios', element: <TemplatesListPage /> },
+                  { path: '/anamnese/formularios/novo', element: <TemplateEditorPage /> },
+                  { path: '/anamnese/formularios/:id', element: <TemplateEditorPage /> },
                 ],
               },
               {

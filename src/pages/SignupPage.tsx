@@ -79,7 +79,7 @@ type FormValues = z.infer<typeof schema>;
 function slugify(value: string) {
   return value
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\p{M}/gu, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
@@ -275,19 +275,23 @@ export function SignupPage() {
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <TextField
                   label="Duração padrão"
-                  inputMode="numeric"
                   placeholder={String(API_DEFAULT_DURATION)}
                   {...muiField(register('defaultDuration'), errors.defaultDuration)}
                   helperText={errors.defaultDuration?.message ?? `Padrão: ${API_DEFAULT_DURATION} min`}
-                  slotProps={{ input: { endAdornment: <InputAdornment position="end">min</InputAdornment> } }}
+                  slotProps={{
+                    htmlInput: { inputMode: 'numeric' },
+                    input: { endAdornment: <InputAdornment position="end">min</InputAdornment> },
+                  }}
                 />
                 <TextField
                   label="Duração mínima"
-                  inputMode="numeric"
                   placeholder={String(API_DEFAULT_MIN_DURATION)}
                   {...muiField(register('minDuration'), errors.minDuration)}
                   helperText={errors.minDuration?.message ?? `Padrão: ${API_DEFAULT_MIN_DURATION} min`}
-                  slotProps={{ input: { endAdornment: <InputAdornment position="end">min</InputAdornment> } }}
+                  slotProps={{
+                    htmlInput: { inputMode: 'numeric' },
+                    input: { endAdornment: <InputAdornment position="end">min</InputAdornment> },
+                  }}
                 />
               </Stack>
             </Stack>

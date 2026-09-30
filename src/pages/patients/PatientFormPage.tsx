@@ -110,7 +110,7 @@ function PatientForm({ patient }: { patient?: Patient }) {
               render={({ field, fieldState }) => (
                 <TextField
                   label="CPF"
-                  inputMode="numeric"
+                  slotProps={{ htmlInput: { inputMode: 'numeric' } }}
                   sx={span(2)}
                   {...field}
                   inputRef={field.ref}
@@ -134,7 +134,7 @@ function PatientForm({ patient }: { patient?: Patient }) {
                 <TextField
                   label="Telefone"
                   type="tel"
-                  inputMode="tel"
+                  slotProps={{ htmlInput: { inputMode: 'tel' } }}
                   sx={span(2)}
                   {...field}
                   inputRef={field.ref}
@@ -156,7 +156,7 @@ function PatientForm({ patient }: { patient?: Patient }) {
               render={({ field, fieldState }) => (
                 <TextField
                   label="CEP"
-                  inputMode="numeric"
+                  slotProps={{ htmlInput: { inputMode: 'numeric' } }}
                   sx={span(2)}
                   {...field}
                   inputRef={field.ref}
