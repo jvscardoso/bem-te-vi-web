@@ -40,11 +40,17 @@ function buildUrl(path: string, query?: Record<string, QueryValue>) {
   return url;
 }
 
+const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
+/** A API informa valores em centavos nas mensagens ("excede o saldo (15000 centavos)"); exibimos em reais. */
+const humanizeCents = (message: string) =>
+  message.replace(/(\d+) centavos/g, (_, cents: string) => currency.format(Number(cents) / 100));
+
 function messagesFor(status: number, body: ApiErrorBody | null): string[] {
   if (status === 429) return ['Muitas tentativas. Aguarde um minuto e tente novamente.'];
   const message = body?.message;
-  if (Array.isArray(message) && message.length > 0) return message;
-  if (typeof message === 'string' && message) return [message];
+  if (Array.isArray(message) && message.length > 0) return message.map(humanizeCents);
+  if (typeof message === 'string' && message) return [humanizeCents(message)];
   if (status >= 500) return ['Erro inesperado no servidor. Tente novamente em instantes.'];
   return ['Não foi possível concluir a operação.'];
 }

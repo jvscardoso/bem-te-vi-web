@@ -9,6 +9,8 @@ import {
 import { ShellLayout } from '@/layouts/ShellLayout';
 import { clinicNavigation, platformNavigation } from '@/layouts/navigation';
 import { MyAccountPage } from '@/pages/account/MyAccountPage';
+import { BillingPage } from '@/pages/billing/BillingPage';
+import { ChargeDetailPage } from '@/pages/billing/ChargeDetailPage';
 import { HomePage } from '@/pages/HomePage';
 import { LoginPage } from '@/pages/LoginPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -20,6 +22,7 @@ import { PatientDetailPage } from '@/pages/patients/PatientDetailPage';
 import { PatientFormPage } from '@/pages/patients/PatientFormPage';
 import { PatientsListPage } from '@/pages/patients/PatientsListPage';
 import { RemovedPatientsPage } from '@/pages/patients/RemovedPatientsPage';
+import { SchedulePage } from '@/pages/schedule/SchedulePage';
 import { SignupPage } from '@/pages/SignupPage';
 
 export const router = createBrowserRouter([
@@ -45,7 +48,7 @@ export const router = createBrowserRouter([
               { path: '/inicio', element: <HomePage /> },
               {
                 element: <RequirePermission permission="appointments:read" />,
-                children: [{ path: '/agenda', element: <PlaceholderPage title="Agenda" /> }],
+                children: [{ path: '/agenda', element: <SchedulePage /> }],
               },
               {
                 element: <RequirePermission permission="patients:read" />,
@@ -65,7 +68,10 @@ export const router = createBrowserRouter([
               },
               {
                 element: <RequirePermission permission="billing:read" />,
-                children: [{ path: '/financeiro', element: <PlaceholderPage title="Financeiro" /> }],
+                children: [
+                  { path: '/financeiro', element: <BillingPage /> },
+                  { path: '/financeiro/cobrancas/:id', element: <ChargeDetailPage /> },
+                ],
               },
               {
                 element: <RequirePermission permission="anamnesis_templates:manage" />,

@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink, useNavigate, useParams, useSearchParams } from 'react-router';
-import { Box, Button, Paper, Skeleton, Stack, Tab, Tabs, Typography } from '@mui/material';
+import { Box, Button, Skeleton, Stack, Tab, Tabs, Typography } from '@mui/material';
 import DeleteOutlineOutlined from '@mui/icons-material/DeleteOutlineOutlined';
 import EditOutlined from '@mui/icons-material/EditOutlined';
 import { patientsApi, patientsKeys } from '@/api/patients';
@@ -9,7 +9,6 @@ import type { Patient } from '@/api/types';
 import { useAuth, useTenantId } from '@/auth/AuthContext';
 import type { PermissionRequirement } from '@/auth/permissions';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessages } from '@/components/ErrorMessages';
 import { PageHeader } from '@/components/PageHeader';
 import { SectionCard } from '@/components/SectionCard';
@@ -19,6 +18,8 @@ import { ageFromBirthDate, formatCpf, formatDate } from '@/lib/format';
 import { maskCep } from '@/lib/masks';
 import { PatientNotFound } from './PatientNotFound';
 import { PatientAnamnesisTab } from './anamnesis/PatientAnamnesisTab';
+import { PatientAppointmentsTab } from './appointments/PatientAppointmentsTab';
+import { PatientChargesTab } from './charges/PatientChargesTab';
 
 interface TabDef {
   value: string;
@@ -99,10 +100,10 @@ export function PatientDetailPage() {
         <PatientData patient={patient} />
       ) : tab === 'anamneses' ? (
         <PatientAnamnesisTab patient={patient} />
+      ) : tab === 'agendamentos' ? (
+        <PatientAppointmentsTab patient={patient} />
       ) : (
-        <Paper variant="outlined">
-          <EmptyState title="Em construção" description="Esta seção será entregue nas próximas etapas." />
-        </Paper>
+        <PatientChargesTab patient={patient} />
       )}
 
       <RemovePatientDialog patient={patient} open={confirmRemove} onClose={() => setConfirmRemove(false)} />

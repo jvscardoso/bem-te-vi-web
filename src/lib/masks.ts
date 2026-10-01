@@ -28,3 +28,21 @@ export function maskCep(value: string): string {
 }
 
 export const onlyDigits = digits;
+
+const moneyFormat = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/** Dinheiro digitado da direita para a esquerda: "15000" → "150,00". */
+export function maskMoney(value: string): string {
+  const d = digits(value).replace(/^0+/, '').slice(0, 11);
+  return d ? moneyFormat.format(Number(d) / 100) : '';
+}
+
+/** "1.234,50" → 123450 (0 se vazio). */
+export function moneyToCents(value: string): number {
+  return Number(digits(value) || '0');
+}
+
+/** 123450 → "1.234,50" (valor inicial para o campo mascarado). */
+export function centsToMoney(cents: number): string {
+  return cents > 0 ? moneyFormat.format(cents / 100) : '';
+}
