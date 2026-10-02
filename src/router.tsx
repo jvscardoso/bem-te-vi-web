@@ -10,10 +10,8 @@ import {
 import { FullScreenLoader } from '@/components/FullScreenLoader';
 import { ShellLayout } from '@/layouts/ShellLayout';
 import { clinicNavigation, platformNavigation } from '@/layouts/navigation';
-import { HomePage } from '@/pages/HomePage';
 import { LoginPage } from '@/pages/LoginPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
-import { PlaceholderPage } from '@/pages/PlaceholderPage';
 
 /**
  * Tela carregada sob demanda: vira um arquivo JS separado, baixado só quando a
@@ -47,7 +45,7 @@ export const router = createBrowserRouter([
               {
                 element: <ShellLayout navigation={clinicNavigation} />,
                 children: [
-                  { path: '/inicio', element: <HomePage /> },
+                  { path: '/inicio', lazy: page(() => import('@/pages/home/HomePage'), 'HomePage') },
                   {
                     element: <RequirePermission permission="appointments:read" />,
                     children: [
@@ -151,7 +149,7 @@ export const router = createBrowserRouter([
                 element: <ShellLayout navigation={platformNavigation} areaLabel="Backoffice" />,
                 children: [
                   { index: true, element: <Navigate to="clinicas" replace /> },
-                  { path: 'clinicas', element: <PlaceholderPage title="Clínicas" /> },
+                  { path: 'clinicas', lazy: page(() => import('@/pages/platform/TenantsPage'), 'TenantsPage') },
                   {
                     path: 'minha-conta',
                     lazy: page(() => import('@/pages/account/MyAccountPage'), 'MyAccountPage'),

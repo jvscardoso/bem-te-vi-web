@@ -161,9 +161,10 @@ function UserMenu() {
 
   if (!user) return null;
 
+  // Iniciais só de palavras que começam com letra e não são títulos ("Dra.", "(teste)").
   const initials = user.name
     .split(/\s+/)
-    .filter(Boolean)
+    .filter((part) => /^\p{L}/u.test(part) && !part.endsWith('.'))
     .slice(0, 2)
     .map((part) => part.charAt(0).toUpperCase())
     .join('');
