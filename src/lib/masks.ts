@@ -29,6 +29,13 @@ export function maskCep(value: string): string {
 
 export const onlyDigits = digits;
 
+/** Senha aleatória legível (sem 0/O, 1/l/I) para o admin repassar ao usuário. */
+export function generatePassword(length = 12): string {
+  const alphabet = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const values = crypto.getRandomValues(new Uint32Array(length));
+  return Array.from(values, (value) => alphabet[value % alphabet.length]).join('');
+}
+
 const moneyFormat = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 /** Dinheiro digitado da direita para a esquerda: "15000" → "150,00". */

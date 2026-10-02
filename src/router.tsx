@@ -22,9 +22,11 @@ import { PatientDetailPage } from '@/pages/patients/PatientDetailPage';
 import { PatientFormPage } from '@/pages/patients/PatientFormPage';
 import { PatientsListPage } from '@/pages/patients/PatientsListPage';
 import { RemovedPatientsPage } from '@/pages/patients/RemovedPatientsPage';
+import { RolesPage } from '@/pages/roles/RolesPage';
 import { SchedulePage } from '@/pages/schedule/SchedulePage';
 import { SettingsPage } from '@/pages/settings/SettingsPage';
 import { SignupPage } from '@/pages/SignupPage';
+import { UsersPage } from '@/pages/users/UsersPage';
 
 export const router = createBrowserRouter([
   {
@@ -84,11 +86,11 @@ export const router = createBrowserRouter([
               },
               {
                 element: <RequirePermission permission="users:manage" />,
-                children: [{ path: '/usuarios', element: <PlaceholderPage title="Usuários" /> }],
+                children: [{ path: '/usuarios', element: <UsersPage /> }],
               },
               {
                 element: <RequirePermission permission="roles:manage" />,
-                children: [{ path: '/papeis', element: <PlaceholderPage title="Papéis e permissões" /> }],
+                children: [{ path: '/papeis', element: <RolesPage /> }],
               },
               {
                 element: <RequirePermission permission="tenant:manage" />,
