@@ -1,3 +1,4 @@
+import type { ComponentType } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router';
 import {
   ClinicAreaOnly,
@@ -6,115 +7,158 @@ import {
   RequireAuth,
   RequirePermission,
 } from '@/auth/guards';
+import { FullScreenLoader } from '@/components/FullScreenLoader';
 import { ShellLayout } from '@/layouts/ShellLayout';
 import { clinicNavigation, platformNavigation } from '@/layouts/navigation';
-import { MyAccountPage } from '@/pages/account/MyAccountPage';
-import { BillingPage } from '@/pages/billing/BillingPage';
-import { ChargeDetailPage } from '@/pages/billing/ChargeDetailPage';
 import { HomePage } from '@/pages/HomePage';
 import { LoginPage } from '@/pages/LoginPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { PlaceholderPage } from '@/pages/PlaceholderPage';
-import { TemplateEditorPage } from '@/pages/anamnesis/templates/TemplateEditorPage';
-import { TemplatesListPage } from '@/pages/anamnesis/templates/TemplatesListPage';
-import { FillAnamnesisPage } from '@/pages/patients/anamnesis/FillAnamnesisPage';
-import { PatientDetailPage } from '@/pages/patients/PatientDetailPage';
-import { PatientFormPage } from '@/pages/patients/PatientFormPage';
-import { PatientsListPage } from '@/pages/patients/PatientsListPage';
-import { RemovedPatientsPage } from '@/pages/patients/RemovedPatientsPage';
-import { RolesPage } from '@/pages/roles/RolesPage';
-import { SchedulePage } from '@/pages/schedule/SchedulePage';
-import { SettingsPage } from '@/pages/settings/SettingsPage';
-import { SignupPage } from '@/pages/SignupPage';
-import { UsersPage } from '@/pages/users/UsersPage';
+
+/**
+ * Tela carregada sob demanda: vira um arquivo JS separado, baixado só quando a
+ * rota é aberta pela primeira vez. Login, layout e guards ficam no pacote inicial.
+ */
+function page<K extends string>(load: () => Promise<Record<K, ComponentType>>, name: K) {
+  return async () => ({ Component: (await load())[name] });
+}
 
 export const router = createBrowserRouter([
   {
-    element: <RedirectIfAuthenticated />,
+    // Exibido enquanto a tela de uma URL aberta diretamente é baixada.
+    HydrateFallback: FullScreenLoader,
     children: [
-      { path: '/login', element: <LoginPage /> },
-      { path: '/cadastro', element: <SignupPage /> },
-    ],
-  },
-  {
-    element: <RequireAuth />,
-    children: [
-      { index: true, element: <HomeRedirect /> },
-
-      // App da clínica
       {
-        element: <ClinicAreaOnly />,
+        element: <RedirectIfAuthenticated />,
         children: [
-          {
-            element: <ShellLayout navigation={clinicNavigation} />,
-            children: [
-              { path: '/inicio', element: <HomePage /> },
-              {
-                element: <RequirePermission permission="appointments:read" />,
-                children: [{ path: '/agenda', element: <SchedulePage /> }],
-              },
-              {
-                element: <RequirePermission permission="patients:read" />,
-                children: [
-                  { path: '/pacientes', element: <PatientsListPage /> },
-                  { path: '/pacientes/:id', element: <PatientDetailPage /> },
-                  {
-                    element: <RequirePermission permission="patients:write" />,
-                    children: [
-                      { path: '/pacientes/novo', element: <PatientFormPage /> },
-                      { path: '/pacientes/removidos', element: <RemovedPatientsPage /> },
-                      { path: '/pacientes/:id/editar', element: <PatientFormPage /> },
-                      { path: '/pacientes/:id/anamneses/nova', element: <FillAnamnesisPage /> },
-                    ],
-                  },
-                ],
-              },
-              {
-                element: <RequirePermission permission="billing:read" />,
-                children: [
-                  { path: '/financeiro', element: <BillingPage /> },
-                  { path: '/financeiro/cobrancas/:id', element: <ChargeDetailPage /> },
-                ],
-              },
-              {
-                element: <RequirePermission permission="anamnesis_templates:manage" />,
-                children: [
-                  { path: '/anamnese/formularios', element: <TemplatesListPage /> },
-                  { path: '/anamnese/formularios/novo', element: <TemplateEditorPage /> },
-                  { path: '/anamnese/formularios/:id', element: <TemplateEditorPage /> },
-                ],
-              },
-              {
-                element: <RequirePermission permission="users:manage" />,
-                children: [{ path: '/usuarios', element: <UsersPage /> }],
-              },
-              {
-                element: <RequirePermission permission="roles:manage" />,
-                children: [{ path: '/papeis', element: <RolesPage /> }],
-              },
-              {
-                element: <RequirePermission permission="tenant:manage" />,
-                children: [{ path: '/configuracoes', element: <SettingsPage /> }],
-              },
-              { path: '/minha-conta', element: <MyAccountPage /> },
-              { path: '*', element: <NotFoundPage /> },
-            ],
-          },
+          { path: '/login', element: <LoginPage /> },
+          { path: '/cadastro', lazy: page(() => import('@/pages/SignupPage'), 'SignupPage') },
         ],
       },
-
-      // Backoffice da plataforma
       {
-        path: '/plataforma',
-        element: <RequirePermission permission="platform:manage" />,
+        element: <RequireAuth />,
         children: [
+          { index: true, element: <HomeRedirect /> },
+
+          // App da clínica
           {
-            element: <ShellLayout navigation={platformNavigation} areaLabel="Backoffice" />,
+            element: <ClinicAreaOnly />,
             children: [
-              { index: true, element: <Navigate to="clinicas" replace /> },
-              { path: 'clinicas', element: <PlaceholderPage title="Clínicas" /> },
-              { path: 'minha-conta', element: <MyAccountPage /> },
-              { path: '*', element: <NotFoundPage /> },
+              {
+                element: <ShellLayout navigation={clinicNavigation} />,
+                children: [
+                  { path: '/inicio', element: <HomePage /> },
+                  {
+                    element: <RequirePermission permission="appointments:read" />,
+                    children: [
+                      { path: '/agenda', lazy: page(() => import('@/pages/schedule/SchedulePage'), 'SchedulePage') },
+                    ],
+                  },
+                  {
+                    element: <RequirePermission permission="patients:read" />,
+                    children: [
+                      {
+                        path: '/pacientes',
+                        lazy: page(() => import('@/pages/patients/PatientsListPage'), 'PatientsListPage'),
+                      },
+                      {
+                        path: '/pacientes/:id',
+                        lazy: page(() => import('@/pages/patients/PatientDetailPage'), 'PatientDetailPage'),
+                      },
+                      {
+                        element: <RequirePermission permission="patients:write" />,
+                        children: [
+                          {
+                            path: '/pacientes/novo',
+                            lazy: page(() => import('@/pages/patients/PatientFormPage'), 'PatientFormPage'),
+                          },
+                          {
+                            path: '/pacientes/removidos',
+                            lazy: page(() => import('@/pages/patients/RemovedPatientsPage'), 'RemovedPatientsPage'),
+                          },
+                          {
+                            path: '/pacientes/:id/editar',
+                            lazy: page(() => import('@/pages/patients/PatientFormPage'), 'PatientFormPage'),
+                          },
+                          {
+                            path: '/pacientes/:id/anamneses/nova',
+                            lazy: page(() => import('@/pages/patients/anamnesis/FillAnamnesisPage'), 'FillAnamnesisPage'),
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    element: <RequirePermission permission="billing:read" />,
+                    children: [
+                      { path: '/financeiro', lazy: page(() => import('@/pages/billing/BillingPage'), 'BillingPage') },
+                      {
+                        path: '/financeiro/cobrancas/:id',
+                        lazy: page(() => import('@/pages/billing/ChargeDetailPage'), 'ChargeDetailPage'),
+                      },
+                    ],
+                  },
+                  {
+                    element: <RequirePermission permission="anamnesis_templates:manage" />,
+                    children: [
+                      {
+                        path: '/anamnese/formularios',
+                        lazy: page(() => import('@/pages/anamnesis/templates/TemplatesListPage'), 'TemplatesListPage'),
+                      },
+                      {
+                        path: '/anamnese/formularios/novo',
+                        lazy: page(() => import('@/pages/anamnesis/templates/TemplateEditorPage'), 'TemplateEditorPage'),
+                      },
+                      {
+                        path: '/anamnese/formularios/:id',
+                        lazy: page(() => import('@/pages/anamnesis/templates/TemplateEditorPage'), 'TemplateEditorPage'),
+                      },
+                    ],
+                  },
+                  {
+                    element: <RequirePermission permission="users:manage" />,
+                    children: [{ path: '/usuarios', lazy: page(() => import('@/pages/users/UsersPage'), 'UsersPage') }],
+                  },
+                  {
+                    element: <RequirePermission permission="roles:manage" />,
+                    children: [{ path: '/papeis', lazy: page(() => import('@/pages/roles/RolesPage'), 'RolesPage') }],
+                  },
+                  {
+                    element: <RequirePermission permission="tenant:manage" />,
+                    children: [
+                      {
+                        path: '/configuracoes',
+                        lazy: page(() => import('@/pages/settings/SettingsPage'), 'SettingsPage'),
+                      },
+                    ],
+                  },
+                  {
+                    path: '/minha-conta',
+                    lazy: page(() => import('@/pages/account/MyAccountPage'), 'MyAccountPage'),
+                  },
+                  { path: '*', element: <NotFoundPage /> },
+                ],
+              },
+            ],
+          },
+
+          // Backoffice da plataforma
+          {
+            path: '/plataforma',
+            element: <RequirePermission permission="platform:manage" />,
+            children: [
+              {
+                element: <ShellLayout navigation={platformNavigation} areaLabel="Backoffice" />,
+                children: [
+                  { index: true, element: <Navigate to="clinicas" replace /> },
+                  { path: 'clinicas', element: <PlaceholderPage title="Clínicas" /> },
+                  {
+                    path: 'minha-conta',
+                    lazy: page(() => import('@/pages/account/MyAccountPage'), 'MyAccountPage'),
+                  },
+                  { path: '*', element: <NotFoundPage /> },
+                ],
+              },
             ],
           },
         ],

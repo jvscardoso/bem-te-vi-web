@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Link as RouterLink, useLocation, useNavigate, type Location } from 'react-router';
 import { Alert, Box, Button, Link, Stack, TextField, Typography } from '@mui/material';
 import { useAuth } from '@/auth/AuthContext';
@@ -13,12 +11,13 @@ import { PublicCardLayout } from '@/layouts/PublicCardLayout';
 import { muiField } from '@/lib/form';
 import { useBranding } from '@/theme/BrandingContext';
 
-const schema = z.object({
-  email: z.email('Informe um email válido'),
-  password: z.string().min(1, 'Informe a senha'),
-});
+interface FormValues {
+  email: string;
+  password: string;
+}
 
-type FormValues = z.infer<typeof schema>;
+// Validação simples, sem Zod: o login é a primeira tela e deve carregar o mínimo de código.
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -32,7 +31,7 @@ export function LoginPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: { email: '', password: '' } });
+  } = useForm<FormValues>({ defaultValues: { email: '', password: '' } });
 
   const onSubmit = handleSubmit(async ({ email, password }) => {
     setSubmitError(null);
@@ -58,8 +57,21 @@ export function LoginPage() {
         )}
         <ErrorMessages error={submitError} />
 
-        <TextField label="Email" type="email" autoComplete="username" autoFocus {...muiField(register('email'), errors.email)} />
-        <PasswordField label="Senha" autoComplete="current-password" {...muiField(register('password'), errors.password)} />
+        <TextField
+          label="Email"
+          type="email"
+          autoComplete="username"
+          autoFocus
+          {...muiField(
+            register('email', { validate: (value) => EMAIL.test(value.trim()) || 'Informe um email válido' }),
+            errors.email,
+          )}
+        />
+        <PasswordField
+          label="Senha"
+          autoComplete="current-password"
+          {...muiField(register('password', { required: 'Informe a senha' }), errors.password)}
+        />
 
         <Button type="submit" variant="contained" size="large" loading={isSubmitting}>
           Entrar

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router';
+import { NavLink, Outlet, useNavigate, useNavigation } from 'react-router';
 import {
   AppBar,
   Avatar,
@@ -7,6 +7,7 @@ import {
   Divider,
   Drawer,
   IconButton,
+  LinearProgress,
   List,
   ListItemButton,
   ListItemIcon,
@@ -40,6 +41,8 @@ export function ShellLayout({ navigation, areaLabel }: ShellLayoutProps) {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
+  // Telas são carregadas sob demanda: indica o download do código da próxima tela.
+  const navigating = useNavigation().state !== 'idle';
 
   const drawerPaperSx = { '& .MuiDrawer-paper': { width: DRAWER_WIDTH, boxSizing: 'border-box' } } as const;
   const drawer = <SideNav navigation={navigation} areaLabel={areaLabel} onNavigate={() => setMobileOpen(false)} />;
@@ -56,6 +59,9 @@ export function ShellLayout({ navigation, areaLabel }: ShellLayoutProps) {
           bgcolor: 'background.paper',
         }}
       >
+        {navigating && (
+          <LinearProgress sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3 }} aria-label="Carregando" />
+        )}
         <Toolbar>
           {!isDesktop && (
             <>

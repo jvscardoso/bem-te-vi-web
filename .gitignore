@@ -9,5 +9,6 @@ dist
 .DS_Store
 .idea/workspace.xml
 
-# Documento interno de regras de negócio (não versionado)
+# Documentos internos (não versionados)
 regras-de-negocio.md
+docs/
