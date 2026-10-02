@@ -23,6 +23,7 @@ import { PatientFormPage } from '@/pages/patients/PatientFormPage';
 import { PatientsListPage } from '@/pages/patients/PatientsListPage';
 import { RemovedPatientsPage } from '@/pages/patients/RemovedPatientsPage';
 import { SchedulePage } from '@/pages/schedule/SchedulePage';
+import { SettingsPage } from '@/pages/settings/SettingsPage';
 import { SignupPage } from '@/pages/SignupPage';
 
 export const router = createBrowserRouter([
@@ -91,7 +92,7 @@ export const router = createBrowserRouter([
               },
               {
                 element: <RequirePermission permission="tenant:manage" />,
-                children: [{ path: '/configuracoes', element: <PlaceholderPage title="Configurações da clínica" /> }],
+                children: [{ path: '/configuracoes', element: <SettingsPage /> }],
               },
               { path: '/minha-conta', element: <MyAccountPage /> },
               { path: '*', element: <NotFoundPage /> },
