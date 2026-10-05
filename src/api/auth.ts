@@ -14,6 +14,10 @@ export const authApi = {
   forgotPassword: (email: string) =>
     api.post<void>('/auth/forgot-password', { email, host: getBrandingHost() }, { auth: false }),
 
+  /** Troca a senha pelo link do email (uso único, 1 hora). Encerra todas as sessões do usuário. */
+  resetPassword: (token: string, password: string) =>
+    api.post<{ email: string }>('/auth/reset-password', { token, password }, { auth: false }),
+
   me: () => api.get<Me>('/auth/me'),
 
   changePassword: (currentPassword: string, newPassword: string) =>

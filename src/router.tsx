@@ -37,6 +37,11 @@ export const router = createBrowserRouter([
           },
         ],
       },
+      // Links de email: acessíveis mesmo com sessão aberta (a troca de senha a encerra).
+      {
+        path: '/reset-password',
+        lazy: page(() => import('@/pages/auth/ResetPasswordPage'), 'ResetPasswordPage'),
+      },
       {
         element: <RequireAuth />,
         children: [

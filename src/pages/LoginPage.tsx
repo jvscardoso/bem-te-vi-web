@@ -10,6 +10,7 @@ import { PasswordField } from '@/components/PasswordField';
 import { PublicCardLayout } from '@/layouts/PublicCardLayout';
 import { muiField } from '@/lib/form';
 import { useBranding } from '@/theme/BrandingContext';
+import type { LoginNotice } from './auth/TokenPasswordPage';
 
 interface FormValues {
   email: string;
@@ -26,13 +27,15 @@ export function LoginPage() {
   const location = useLocation();
   const [submitError, setSubmitError] = useState<unknown>(null);
   const [logoutReason] = useState(session.getLogoutReason);
+  // Vindo de "criar nova senha" ou "aceitar convite": email preenchido e aviso de sucesso.
+  const [arrival] = useState(() => (location.state as LoginNotice | null) ?? {});
 
   const {
     register,
     control,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({ defaultValues: { email: '', password: '' } });
+  } = useForm<FormValues>({ defaultValues: { email: arrival.email ?? '', password: '' } });
   const email = useWatch({ control, name: 'email' });
 
   const onSubmit = handleSubmit(async ({ email, password }) => {
@@ -54,7 +57,8 @@ export function LoginPage() {
           <BrandTitle />
         </Stack>
 
-        {logoutReason === 'expired' && !submitError && (
+        {arrival.notice && !submitError && <Alert severity="success">{arrival.notice}</Alert>}
+        {logoutReason === 'expired' && !submitError && !arrival.notice && (
           <Alert severity="info">Sua sessão foi encerrada. Entre novamente para continuar.</Alert>
         )}
         <ErrorMessages error={submitError} />
@@ -63,7 +67,7 @@ export function LoginPage() {
           label="Email"
           type="email"
           autoComplete="username"
-          autoFocus
+          autoFocus={!arrival.email}
           {...muiField(
             register('email', { validate: (value) => EMAIL.test(value.trim()) || 'Informe um email válido' }),
             errors.email,
@@ -72,6 +76,7 @@ export function LoginPage() {
         <PasswordField
           label="Senha"
           autoComplete="current-password"
+          autoFocus={!!arrival.email}
           {...muiField(register('password', { required: 'Informe a senha' }), errors.password)}
         />
 
