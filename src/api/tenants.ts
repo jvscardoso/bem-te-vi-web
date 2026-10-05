@@ -50,6 +50,18 @@ export const tenantsApi = {
   updateBranding: (tenantId: UUID, input: BrandingUpdate) =>
     api.patch<TenantBranding>(`/tenants/${tenantId}/branding`, input),
 
+  /**
+   * Envia o logo (PNG, JPEG ou WebP até 1 MB; SVG é recusado). A API passa a servi-lo numa
+   * URL pública nova a cada envio; a anterior deixa de existir.
+   */
+  uploadLogo: (tenantId: UUID, file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return api.put<TenantBranding>(`/tenants/${tenantId}/branding/logo`, form);
+  },
+  /** Remove o logo enviado (volta ao padrão). */
+  deleteLogo: (tenantId: UUID) => api.delete<TenantBranding>(`/tenants/${tenantId}/branding/logo`),
+
   /** 404 quando a clínica não tem domínio próprio configurado. */
   domain: (tenantId: UUID) => api.get<DomainVerification>(`/tenants/${tenantId}/domain`),
   /** Consulta o DNS agora. Sempre 200; `verified: false` enquanto não propagar. */

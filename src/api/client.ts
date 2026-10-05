@@ -6,7 +6,7 @@ const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000').replac
 type QueryValue = string | number | boolean | null | undefined | (string | number)[];
 
 export interface RequestOptions {
-  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
   body?: unknown;
   query?: Record<string, QueryValue>;
   /** Envia o Bearer token (padrão: true). */
@@ -48,6 +48,7 @@ const humanizeCents = (message: string) =>
 
 function messagesFor(status: number, body: ApiErrorBody | null): string[] {
   if (status === 429) return ['Muitas tentativas. Aguarde um minuto e tente novamente.'];
+  if (status === 413) return ['O arquivo é grande demais.'];
   const message = body?.message;
   if (Array.isArray(message) && message.length > 0) return message.map(humanizeCents);
   if (typeof message === 'string' && message) return [humanizeCents(message)];
@@ -59,7 +60,9 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   const { method = 'GET', body, query, auth = true, signal } = options;
 
   const headers: Record<string, string> = { Accept: 'application/json' };
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  // FormData (upload) vai como está: o navegador define o Content-Type com o boundary do multipart.
+  const isFormData = body instanceof FormData;
+  if (body !== undefined && !isFormData) headers['Content-Type'] = 'application/json';
   const token = auth ? session.getToken() : null;
   if (token) headers.Authorization = `Bearer ${token}`;
 
@@ -68,7 +71,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     response = await fetch(buildUrl(path, query), {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? undefined : isFormData ? body : JSON.stringify(body),
       signal,
     });
   } catch (error) {
@@ -106,6 +109,8 @@ export const api = {
     request<T>(path, { ...options, method: 'POST', body }),
   patch: <T>(path: string, body?: unknown, options?: Omit<RequestOptions, 'method' | 'body'>) =>
     request<T>(path, { ...options, method: 'PATCH', body }),
+  put: <T>(path: string, body?: unknown, options?: Omit<RequestOptions, 'method' | 'body'>) =>
+    request<T>(path, { ...options, method: 'PUT', body }),
   delete: <T = void>(path: string, options?: Omit<RequestOptions, 'method'>) =>
     request<T>(path, { ...options, method: 'DELETE' }),
 };
