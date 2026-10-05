@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   Checkbox,
+  Chip,
   FormControlLabel,
   IconButton,
   LinearProgress,
@@ -53,7 +54,7 @@ type DialogState = { appointment: Appointment } | { draft: AppointmentDraft } | 
 
 export function SchedulePage() {
   const tenantId = useTenantId();
-  const { can } = useAuth();
+  const { can, user } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [params, setParams] = useSearchParams();
@@ -62,7 +63,10 @@ export function SchedulePage() {
   // Estado na URL: ?data=2026-10-01&visao=dia&profissional=<id>&todos=1
   const date = fromDateKey(params.get('data')) ?? startOfDay(new Date());
   const view: View = params.get('visao') === 'dia' ? 'dia' : 'semana';
-  const professionalId = params.get('profissional') ?? '';
+  // Sem appointments:all, só a própria agenda: o filtro é sempre o próprio usuário (um
+  // ?profissional= de outra pessoa, vindo de link antigo, daria 403 e é ignorado).
+  const seesAllAgendas = can('appointments:all');
+  const professionalId = seesAllAgendas ? (params.get('profissional') ?? '') : (user?.userId ?? '');
   const showInactive = params.get('todos') === '1';
 
   const updateParams = (changes: Record<string, string | null>) =>
@@ -237,23 +241,27 @@ export function SchedulePage() {
             <ToggleButton value="dia">Dia</ToggleButton>
             <ToggleButton value="semana">Semana</ToggleButton>
           </ToggleButtonGroup>
-          <TextField
-            select
-            size="small"
-            label="Profissional"
-            value={professionalId}
-            onChange={(event) => updateParams({ profissional: event.target.value || null })}
-            sx={{ minWidth: 220 }}
-            // Mostra "Todos os profissionais" (valor vazio) em vez de um campo em branco.
-            slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
-          >
-            <MenuItem value="">Todos os profissionais</MenuItem>
-            {professionals.data?.map((professional) => (
-              <MenuItem key={professional.id} value={professional.id}>
-                {professional.name}
-              </MenuItem>
-            ))}
-          </TextField>
+          {seesAllAgendas ? (
+            <TextField
+              select
+              size="small"
+              label="Profissional"
+              value={professionalId}
+              onChange={(event) => updateParams({ profissional: event.target.value || null })}
+              sx={{ minWidth: 220 }}
+              // Mostra "Todos os profissionais" (valor vazio) em vez de um campo em branco.
+              slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
+            >
+              <MenuItem value="">Todos os profissionais</MenuItem>
+              {professionals.data?.map((professional) => (
+                <MenuItem key={professional.id} value={professional.id}>
+                  {professional.name}
+                </MenuItem>
+              ))}
+            </TextField>
+          ) : (
+            <Chip label="Sua agenda" variant="outlined" />
+          )}
           <FormControlLabel
             control={
               <Checkbox

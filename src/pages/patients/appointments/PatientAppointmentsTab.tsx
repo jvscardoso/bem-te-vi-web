@@ -73,7 +73,15 @@ export function PatientAppointmentsTab({ patient }: { patient: Patient }) {
 
   return (
     <Stack spacing={3} sx={{ maxWidth: 960 }}>
-      <Stack direction="row" sx={{ justifyContent: 'flex-end' }}>
+      <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+        {/* Sem appointments:all a API devolve só os agendamentos do próprio usuário. */}
+        {!can('appointments:all') ? (
+          <Typography variant="body2" color="text.secondary">
+            Mostrando apenas a sua agenda com este paciente.
+          </Typography>
+        ) : (
+          <span />
+        )}
         {newButton}
       </Stack>
       <AppointmentsTable

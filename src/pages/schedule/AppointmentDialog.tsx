@@ -86,10 +86,12 @@ function initialValues(appointment?: Appointment, draft?: AppointmentDraft): For
 
 export function AppointmentDialog({ appointment, draft, onClose }: AppointmentDialogProps) {
   const tenantId = useTenantId();
-  const { can } = useAuth();
+  const { can, user } = useAuth();
   const queryClient = useQueryClient();
   const notify = useNotify();
   const theme = useTheme();
+  // Sem appointments:all, só a própria agenda: o profissional é sempre o próprio usuário.
+  const seesAllAgendas = can('appointments:all');
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const [endEdited, setEndEdited] = useState(!!appointment);
   const [pendingStatus, setPendingStatus] = useState<AppointmentStatus | null>(null);
@@ -111,7 +113,12 @@ export function AppointmentDialog({ appointment, draft, onClose }: AppointmentDi
     setValue,
     getValues,
     formState: { dirtyFields },
-  } = useForm<FormValues>({ defaultValues: initialValues(appointment, draft) });
+  } = useForm<FormValues>({
+    defaultValues: initialValues(
+      appointment,
+      seesAllAgendas ? draft : { ...draft, professionalId: user?.userId },
+    ),
+  });
 
   const [professionalId, startTime, date] = useWatch({ control, name: ['professionalId', 'start', 'date'] });
   const professional = professionals.data?.find((item) => item.id === professionalId);
@@ -237,35 +244,42 @@ export function AppointmentDialog({ appointment, draft, onClose }: AppointmentDi
             )}
           />
 
-          <Controller
-            name="professionalId"
-            control={control}
-            rules={{ required: 'Selecione o profissional' }}
-            render={({ field, fieldState }) => (
-              <TextField
-                select
-                label="Profissional"
-                {...field}
-                inputRef={field.ref}
-                disabled={lockSchedule}
-                error={!!fieldState.error}
-                helperText={
-                  fieldState.error?.message ??
-                  (professional && `Duração padrão: ${professional.effectiveAppointmentDurationMinutes} min`)
-                }
-              >
-                {/* Profissional desativado continua aparecendo nos agendamentos antigos. */}
-                {appointment && !professionals.data?.some((item) => item.id === appointment.professionalId) && (
-                  <MenuItem value={appointment.professionalId}>{appointment.professional.name}</MenuItem>
-                )}
-                {professionals.data?.map((item) => (
-                  <MenuItem key={item.id} value={item.id}>
-                    {item.name}
-                  </MenuItem>
-                ))}
-              </TextField>
-            )}
-          />
+          {seesAllAgendas ? (
+            <Controller
+              name="professionalId"
+              control={control}
+              rules={{ required: 'Selecione o profissional' }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  select
+                  label="Profissional"
+                  {...field}
+                  inputRef={field.ref}
+                  disabled={lockSchedule}
+                  error={!!fieldState.error}
+                  helperText={
+                    fieldState.error?.message ??
+                    (professional && `Duração padrão: ${professional.effectiveAppointmentDurationMinutes} min`)
+                  }
+                >
+                  {/* Profissional desativado continua aparecendo nos agendamentos antigos. */}
+                  {appointment && !professionals.data?.some((item) => item.id === appointment.professionalId) && (
+                    <MenuItem value={appointment.professionalId}>{appointment.professional.name}</MenuItem>
+                  )}
+                  {professionals.data?.map((item) => (
+                    <MenuItem key={item.id} value={item.id}>
+                      {item.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              Na sua agenda
+              {professional && ` · duração padrão de ${professional.effectiveAppointmentDurationMinutes} min`}
+            </Typography>
+          )}
 
           <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr 1fr', sm: '2fr 1fr 1fr' } }}>
             <Controller

@@ -7,7 +7,7 @@ export interface ApiError { statusCode: number; error: string; message: string |
 
 export type PermissionKey =
   | 'patients:read' | 'patients:write'
-  | 'appointments:read' | 'appointments:write'
+  | 'appointments:read' | 'appointments:write' | 'appointments:all'
   | 'users:manage' | 'roles:manage' | 'tenant:manage'
   | 'anamnesis_templates:manage'
   | 'billing:read' | 'billing:write'

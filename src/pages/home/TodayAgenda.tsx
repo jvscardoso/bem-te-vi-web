@@ -27,7 +27,9 @@ import { STATUS_COLORS, STATUS_LABELS } from '@/pages/schedule/status';
 /** Atendimentos de hoje (exceto cancelados), com o próximo destacado. */
 export function TodayAgenda() {
   const tenantId = useTenantId();
-  const { user } = useAuth();
+  const { user, can } = useAuth();
+  // Sem appointments:all a API já devolve só a própria agenda: não há o que filtrar.
+  const seesAllAgendas = can('appointments:all');
   const [onlyMine, setOnlyMine] = useState(false);
   const [open, setOpen] = useState<Appointment | null>(null);
   // Momento de referência fixado ao abrir a tela (React Compiler exige render puro).
@@ -59,7 +61,7 @@ export function TodayAgenda() {
       <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 1.5, gap: 1, flexWrap: 'wrap' }}>
         <Box>
           <Typography variant="h6" component="h2" sx={{ fontWeight: 600 }}>
-            Agenda de hoje
+            {seesAllAgendas ? 'Agenda de hoje' : 'Sua agenda de hoje'}
           </Typography>
           {query.data && (
             <Typography variant="body2" color="text.secondary">
@@ -68,7 +70,7 @@ export function TodayAgenda() {
           )}
         </Box>
         <Stack direction="row" sx={{ alignItems: 'center', gap: 1 }}>
-          {mine.length > 0 && (
+          {seesAllAgendas && mine.length > 0 && (
             <FormControlLabel
               control={<Switch size="small" checked={onlyMine} onChange={(_, checked) => setOnlyMine(checked)} />}
               label="Só os meus"

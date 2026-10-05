@@ -8,16 +8,20 @@ export interface PermissionGroup {
 /** Agrupamento por área para o editor de papéis (chaves fora da lista caem em "Outras"). */
 export const PERMISSION_GROUPS: PermissionGroup[] = [
   { title: 'Pacientes', keys: ['patients:read', 'patients:write'] },
-  { title: 'Agenda', keys: ['appointments:read', 'appointments:write'] },
+  { title: 'Agenda', keys: ['appointments:read', 'appointments:write', 'appointments:all'] },
   { title: 'Financeiro', keys: ['billing:read', 'billing:write'] },
   { title: 'Anamnese', keys: ['anamnesis_templates:manage'] },
   { title: 'Administração', keys: ['users:manage', 'roles:manage', 'tenant:manage'] },
 ];
 
-/** "Editar" sem "ver" não faz sentido: marcar escrita marca leitura; desmarcar leitura tira escrita. */
-const READ_FOR_WRITE: Partial<Record<PermissionKey, PermissionKey>> = {
+/**
+ * Permissões que só fazem sentido junto com a leitura da área ("editar" sem "ver", "todas as
+ * agendas" sem "ver a própria"): marcar uma marca a leitura; desmarcar a leitura tira as duas.
+ */
+const REQUIRES_READ: Partial<Record<PermissionKey, PermissionKey>> = {
   'patients:write': 'patients:read',
   'appointments:write': 'appointments:read',
+  'appointments:all': 'appointments:read',
   'billing:write': 'billing:read',
 };
 
@@ -25,12 +29,12 @@ export function togglePermission(selected: PermissionKey[], key: PermissionKey, 
   const next = new Set(selected);
   if (checked) {
     next.add(key);
-    const read = READ_FOR_WRITE[key];
+    const read = REQUIRES_READ[key];
     if (read) next.add(read);
   } else {
     next.delete(key);
-    for (const [write, read] of Object.entries(READ_FOR_WRITE)) {
-      if (read === key) next.delete(write as PermissionKey);
+    for (const [dependent, read] of Object.entries(REQUIRES_READ)) {
+      if (read === key) next.delete(dependent as PermissionKey);
     }
   }
   return [...next];
