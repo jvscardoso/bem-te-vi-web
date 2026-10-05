@@ -1,9 +1,11 @@
+import { getBrandingHost } from '@/theme/brandingHost';
 import { api } from './client';
 import type { ChangePasswordResponse, LoginResponse, Me, PublicBranding } from './types';
 
 export const authApi = {
+  /** O `host` restringe o login aos usuários da clínica do endereço (mesmo valor da marca). */
   login: (email: string, password: string) =>
-    api.post<LoginResponse>('/auth/login', { email, password }, { auth: false }),
+    api.post<LoginResponse>('/auth/login', { email, password, host: getBrandingHost() }, { auth: false }),
 
   me: () => api.get<Me>('/auth/me'),
 

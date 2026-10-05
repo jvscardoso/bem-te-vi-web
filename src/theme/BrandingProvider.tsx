@@ -4,33 +4,13 @@ import { CssBaseline, ThemeProvider } from '@mui/material';
 import { publicApi } from '@/api/auth';
 import { isApiError } from '@/lib/errors';
 import { BrandingContext, type BrandingContextValue } from './BrandingContext';
+import { getBrandingHost } from './brandingHost';
 import { createAppTheme } from './createAppTheme';
 
-const DEV_TENANT_KEY = 'btv.devTenant';
 const PRODUCT_NAME = 'bem-te-vi';
 
-/**
- * Host usado para resolver a marca da clínica.
- * Em produção é sempre o host real. Em dev (sem DNS) aceita `?tenant=<subdomínio>`
- * (lembrado na aba; `?tenant=` vazio esquece) ou VITE_DEV_TENANT.
- */
-function resolveBrandingHost(): string {
-  if (!import.meta.env.DEV) return window.location.host;
-
-  const fromUrl = new URLSearchParams(window.location.search).get('tenant');
-  try {
-    if (fromUrl) sessionStorage.setItem(DEV_TENANT_KEY, fromUrl);
-    else if (fromUrl === '') sessionStorage.removeItem(DEV_TENANT_KEY);
-    const remembered = sessionStorage.getItem(DEV_TENANT_KEY);
-    if (remembered) return remembered;
-  } catch {
-    if (fromUrl) return fromUrl;
-  }
-  return import.meta.env.VITE_DEV_TENANT || window.location.host;
-}
-
 export function BrandingProvider({ children }: { children: ReactNode }) {
-  const [host] = useState(resolveBrandingHost);
+  const [host] = useState(getBrandingHost);
 
   const query = useQuery({
     queryKey: ['public-branding', host],
