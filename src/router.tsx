@@ -31,6 +31,10 @@ export const router = createBrowserRouter([
         children: [
           { path: '/login', element: <LoginPage /> },
           { path: '/cadastro', lazy: page(() => import('@/pages/SignupPage'), 'SignupPage') },
+          {
+            path: '/esqueci-minha-senha',
+            lazy: page(() => import('@/pages/ForgotPasswordPage'), 'ForgotPasswordPage'),
+          },
         ],
       },
       {

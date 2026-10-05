@@ -7,6 +7,13 @@ export const authApi = {
   login: (email: string, password: string) =>
     api.post<LoginResponse>('/auth/login', { email, password, host: getBrandingHost() }, { auth: false }),
 
+  /**
+   * Pede o link de recuperação. Sempre 204, exista a conta ou não (a rota não revela
+   * emails cadastrados); o link só sai para contas que conseguiriam entrar por este endereço.
+   */
+  forgotPassword: (email: string) =>
+    api.post<void>('/auth/forgot-password', { email, host: getBrandingHost() }, { auth: false }),
+
   me: () => api.get<Me>('/auth/me'),
 
   changePassword: (currentPassword: string, newPassword: string) =>

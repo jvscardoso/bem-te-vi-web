@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { Link as RouterLink, useLocation, useNavigate, type Location } from 'react-router';
 import { Alert, Box, Button, Link, Stack, TextField, Typography } from '@mui/material';
 import { useAuth } from '@/auth/AuthContext';
@@ -29,9 +29,11 @@ export function LoginPage() {
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ defaultValues: { email: '', password: '' } });
+  const email = useWatch({ control, name: 'email' });
 
   const onSubmit = handleSubmit(async ({ email, password }) => {
     setSubmitError(null);
@@ -77,8 +79,11 @@ export function LoginPage() {
           Entrar
         </Button>
 
-        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
-          Esqueceu a senha? Peça ao administrador da clínica para redefini-la.
+        <Typography variant="body2" sx={{ textAlign: 'center' }}>
+          {/* Leva o email já digitado para não precisar digitar de novo. */}
+          <Link component={RouterLink} to="/esqueci-minha-senha" state={{ email: email.trim() }}>
+            Esqueci minha senha
+          </Link>
         </Typography>
 
         {brandingStatus !== 'found' && (
