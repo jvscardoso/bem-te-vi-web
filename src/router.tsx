@@ -42,6 +42,13 @@ export const router = createBrowserRouter([
         path: '/reset-password',
         lazy: page(() => import('@/pages/auth/ResetPasswordPage'), 'ResetPasswordPage'),
       },
+      // Textos legais: públicos, abertos em outra aba a partir do cadastro e do convite.
+      { path: '/termos', lazy: page(() => import('@/pages/legal/LegalDocumentPage'), 'TermsPage') },
+      { path: '/privacidade', lazy: page(() => import('@/pages/legal/LegalDocumentPage'), 'PrivacyPage') },
+      {
+        path: '/accept-invite',
+        lazy: page(() => import('@/pages/auth/AcceptInvitePage'), 'AcceptInvitePage'),
+      },
       {
         element: <RequireAuth />,
         children: [

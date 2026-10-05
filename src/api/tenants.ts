@@ -1,4 +1,5 @@
 import { api } from './client';
+import type { LegalAcceptance } from './legal';
 import type { DomainVerification, Tenant, TenantBranding, UUID } from './types';
 
 export interface SignupInput {
@@ -8,6 +9,8 @@ export interface SignupInput {
   defaultAppointmentDurationMinutes?: number;
   minAppointmentDurationMinutes?: number;
   owner: { name: string; email: string; password: string };
+  /** Aceite das versões vigentes dos Termos e da Política (obrigatório, LGPD). */
+  legalAcceptance: LegalAcceptance;
 }
 
 export interface SignupResponse {

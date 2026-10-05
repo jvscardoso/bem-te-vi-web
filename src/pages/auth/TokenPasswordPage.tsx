@@ -1,12 +1,15 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
 import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router';
 import { Alert, Box, Button, Link, Stack, Typography } from '@mui/material';
 import { ApiError } from '@/api/client';
+import type { LegalAcceptance } from '@/api/legal';
 import { session } from '@/auth/session';
 import { BrandMark } from '@/components/BrandMark';
 import { ErrorMessages } from '@/components/ErrorMessages';
+import { LegalAcceptanceField } from '@/components/LegalAcceptanceField';
+import { useLegalAcceptance } from '@/components/useLegalAcceptance';
 import { PasswordField } from '@/components/PasswordField';
 import { PublicCardLayout } from '@/layouts/PublicCardLayout';
 import { muiField } from '@/lib/form';
@@ -21,8 +24,11 @@ interface TokenPasswordPageProps {
   title: string;
   description: ReactNode;
   submitLabel: string;
-  /** Troca o token + senha na API e devolve o email da conta. */
-  submit: (token: string, password: string) => Promise<{ email: string }>;
+  passwordLabel?: string;
+  /** Exige o aceite dos Termos e da Política (primeiro acesso, como no aceite de convite). */
+  requireLegalAcceptance?: boolean;
+  /** Troca o token + senha (e o aceite, se exigido) na API e devolve o email da conta. */
+  submit: (token: string, password: string, legal?: LegalAcceptance) => Promise<{ email: string }>;
   successNotice: string;
   /** Conteúdo exibido quando o link é inválido, expirou ou já foi usado. */
   invalidLink: ReactNode;
@@ -31,6 +37,7 @@ interface TokenPasswordPageProps {
 interface FormValues {
   password: string;
   confirmation: string;
+  legal: boolean;
 }
 
 /**
@@ -42,6 +49,8 @@ export function TokenPasswordPage({
   title,
   description,
   submitLabel,
+  passwordLabel = 'Nova senha',
+  requireLegalAcceptance = false,
   submit,
   successNotice,
   invalidLink,
@@ -59,15 +68,19 @@ export function TokenPasswordPage({
     window.history.replaceState(window.history.state, '', url);
   }, []);
 
+  const legal = useLegalAcceptance();
+
   const {
     register,
+    control,
     handleSubmit,
     getValues,
     formState: { errors },
-  } = useForm<FormValues>({ defaultValues: { password: '', confirmation: '' } });
+  } = useForm<FormValues>({ defaultValues: { password: '', confirmation: '', legal: false } });
 
   const save = useMutation({
-    mutationFn: (password: string) => submit(token!, password),
+    mutationFn: (password: string) =>
+      submit(token!, password, requireLegalAcceptance ? (legal.acceptance ?? undefined) : undefined),
     onSuccess: ({ email }) => {
       // A troca encerra todas as sessões do usuário, inclusive alguma aberta neste navegador.
       session.clear('logout');
@@ -75,9 +88,13 @@ export function TokenPasswordPage({
     },
   });
 
-  // 400 com mensagem única = link inválido/expirado/já usado; com lista = validação da senha.
+  // Link inexistente, expirado, já usado ou substituído. Outros 400 (senha fora das regras,
+  // versão dos termos desatualizada) ficam no formulário com a mensagem da API.
   const linkInvalid =
-    !token || (save.error instanceof ApiError && save.error.status === 400 && !Array.isArray(save.error.body?.message));
+    !token ||
+    (save.error instanceof ApiError &&
+      save.error.status === 400 &&
+      save.error.messages.some((message) => message.startsWith('Link inválido')));
 
   return (
     <PublicCardLayout>
@@ -100,7 +117,7 @@ export function TokenPasswordPage({
         ) : (
           <Stack spacing={2.5} component="form" onSubmit={handleSubmit(({ password }) => save.mutate(password))} noValidate>
             <PasswordField
-              label="Nova senha"
+              label={passwordLabel}
               autoComplete="new-password"
               autoFocus
               {...muiField(
@@ -113,7 +130,7 @@ export function TokenPasswordPage({
               helperText={errors.password?.message ?? 'Mínimo de 8 caracteres.'}
             />
             <PasswordField
-              label="Confirme a nova senha"
+              label={`Confirme a ${passwordLabel.toLowerCase()}`}
               autoComplete="new-password"
               {...muiField(
                 register('confirmation', {
@@ -122,8 +139,29 @@ export function TokenPasswordPage({
                 errors.confirmation,
               )}
             />
+            {requireLegalAcceptance && (
+              <Controller
+                name="legal"
+                control={control}
+                rules={{ validate: (value) => value || 'É preciso aceitar para continuar' }}
+                render={({ field, fieldState }) => (
+                  <LegalAcceptanceField
+                    checked={field.value}
+                    onChange={field.onChange}
+                    error={fieldState.error?.message}
+                    loadError={legal.error}
+                  />
+                )}
+              />
+            )}
             <ErrorMessages error={save.error} />
-            <Button type="submit" variant="contained" size="large" loading={save.isPending}>
+            <Button
+              type="submit"
+              variant="contained"
+              size="large"
+              loading={save.isPending}
+              disabled={requireLegalAcceptance && !legal.acceptance}
+            >
               {submitLabel}
             </Button>
           </Stack>

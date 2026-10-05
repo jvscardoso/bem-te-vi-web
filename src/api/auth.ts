@@ -1,5 +1,6 @@
 import { getBrandingHost } from '@/theme/brandingHost';
 import { api } from './client';
+import type { LegalAcceptance } from './legal';
 import type { ChangePasswordResponse, LoginResponse, Me, PublicBranding } from './types';
 
 export const authApi = {
@@ -17,6 +18,10 @@ export const authApi = {
   /** Troca a senha pelo link do email (uso único, 1 hora). Encerra todas as sessões do usuário. */
   resetPassword: (token: string, password: string) =>
     api.post<{ email: string }>('/auth/reset-password', { token, password }, { auth: false }),
+
+  /** Ativa a conta convidada: cria a senha e aceita os Termos e a Política (link do email, uso único, 7 dias). */
+  acceptInvite: (token: string, password: string, legalAcceptance?: LegalAcceptance) =>
+    api.post<{ email: string }>('/auth/accept-invite', { token, password, legalAcceptance }, { auth: false }),
 
   me: () => api.get<Me>('/auth/me'),
 

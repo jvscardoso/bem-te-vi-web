@@ -8,9 +8,14 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControl,
+  FormControlLabel,
+  FormLabel,
   InputAdornment,
   ListItemText,
   MenuItem,
+  Radio,
+  RadioGroup,
   Stack,
   TextField,
   useMediaQuery,
@@ -32,6 +37,8 @@ interface FormValues {
   roleId: string;
   status: UserStatus;
   duration: string;
+  /** Criação: convite por email (a pessoa cria a senha) ou senha definida pelo admin. */
+  access: 'invite' | 'password';
   password: string;
 }
 
@@ -69,12 +76,16 @@ export function UserDialog({ user, roles, readOnly, onClose, onResetPassword }: 
       roleId: user?.roleId ?? '',
       status: user?.status ?? 'active',
       duration: user?.defaultAppointmentDurationMinutes?.toString() ?? '',
+      access: 'invite',
       password: '',
     },
   });
   const password = useWatch({ control, name: 'password' });
   const roleId = useWatch({ control, name: 'roleId' });
   const status = useWatch({ control, name: 'status' });
+  const access = useWatch({ control, name: 'access' });
+  // Convidado só fica ativo aceitando o convite; para os demais, "convidado" não é uma opção.
+  const statusOptions: UserStatus[] = user?.status === 'invited' ? ['invited', 'disabled'] : ['active', 'disabled'];
 
   const save = useMutation({
     mutationFn: (values: FormValues) => {
@@ -83,7 +94,8 @@ export function UserDialog({ user, roles, readOnly, onClose, onResetPassword }: 
         return usersApi.create(tenantId, {
           name: values.name.trim(),
           email: values.email.trim(),
-          password: values.password,
+          // Sem senha, a API cria o usuário como convidado e envia o convite por email.
+          ...(values.access === 'password' && { password: values.password }),
           roleId: values.roleId,
           ...(duration !== null && { defaultAppointmentDurationMinutes: duration }),
         });
@@ -96,14 +108,25 @@ export function UserDialog({ user, roles, readOnly, onClose, onResetPassword }: 
       if (dirtyFields.duration) update.defaultAppointmentDurationMinutes = duration;
       return usersApi.update(tenantId, user.id, update);
     },
-    onSuccess: () => {
+    onSuccess: (saved) => {
       void queryClient.invalidateQueries({ queryKey: usersKeys.all(tenantId) });
       void queryClient.invalidateQueries({ queryKey: usersKeys.professionals(tenantId) });
       // Alterou o próprio papel: as permissões mudam na hora.
       if (isSelf) void refresh();
-      notify(user ? 'Usuário atualizado.' : 'Usuário criado. Repasse a senha inicial.');
+      notify(
+        user
+          ? 'Usuário atualizado.'
+          : saved.status === 'invited'
+            ? `Convite enviado para ${saved.email}. O link vale por 7 dias.`
+            : 'Usuário criado. Repasse a senha inicial.',
+      );
       onClose();
     },
+  });
+
+  const resendInvite = useMutation({
+    mutationFn: () => usersApi.resendInvite(tenantId, user!.id),
+    onSuccess: () => notify('Convite reenviado. O link anterior não vale mais.'),
   });
 
   const selectedRoleChanged = isSelf && roleId !== user?.roleId;
@@ -206,7 +229,7 @@ export function UserDialog({ user, roles, readOnly, onClose, onResetPassword }: 
                   disabled={readOnly}
                   helperText={USER_STATUS[field.value].hint}
                 >
-                  {(Object.keys(USER_STATUS) as UserStatus[]).map((status) => (
+                  {statusOptions.map((status) => (
                     <MenuItem key={status} value={status}>
                       {USER_STATUS[status].label}
                     </MenuItem>
@@ -244,13 +267,34 @@ export function UserDialog({ user, roles, readOnly, onClose, onResetPassword }: 
           />
 
           {!user && (
+            <Controller
+              name="access"
+              control={control}
+              render={({ field }) => (
+                <FormControl>
+                  <FormLabel>Acesso</FormLabel>
+                  <RadioGroup {...field}>
+                    <FormControlLabel
+                      value="invite"
+                      control={<Radio />}
+                      label="Enviar convite por email — a pessoa cria a própria senha (link válido por 7 dias)"
+                    />
+                    <FormControlLabel value="password" control={<Radio />} label="Definir senha agora" />
+                  </RadioGroup>
+                </FormControl>
+              )}
+            />
+          )}
+
+          {!user && access === 'password' && (
             <Box>
               <Controller
                 name="password"
                 control={control}
                 rules={{
-                  validate: (value) =>
-                    value.length < 8 ? 'Mínimo de 8 caracteres' : value.length > 200 ? 'Máximo de 200 caracteres' : true,
+                  validate: (value, values) =>
+                    values.access !== 'password' ||
+                    (value.length < 8 ? 'Mínimo de 8 caracteres' : value.length > 200 ? 'Máximo de 200 caracteres' : true),
                 }}
                 render={({ field, fieldState }) => (
                   <PasswordField
@@ -261,7 +305,7 @@ export function UserDialog({ user, roles, readOnly, onClose, onResetPassword }: 
                     error={!!fieldState.error}
                     helperText={
                       fieldState.error?.message ??
-                      'Não há envio por email: repasse a senha ao usuário. Ele pode trocá-la em Minha conta.'
+                      'Repasse a senha ao usuário. Ele pode trocá-la em Minha conta.'
                     }
                   />
                 )}
@@ -275,14 +319,25 @@ export function UserDialog({ user, roles, readOnly, onClose, onResetPassword }: 
         </Stack>
       </DialogContent>
 
-      {save.error && (
+      {(save.error || resendInvite.error) && (
         <Box sx={{ px: 3, pt: 2 }}>
-          <ErrorMessages error={save.error} />
+          <ErrorMessages error={save.error ?? resendInvite.error} />
         </Box>
       )}
 
       <DialogActions sx={{ px: 3, py: 2 }}>
-        {user && !readOnly && !isSelf && onResetPassword && (
+        {/* Convidado ainda não tem senha: redefinir não o ativaria. O caminho é reenviar o convite. */}
+        {user && !readOnly && user.status === 'invited' && (
+          <Button
+            onClick={() => resendInvite.mutate()}
+            loading={resendInvite.isPending}
+            sx={{ mr: 'auto' }}
+            disabled={save.isPending}
+          >
+            Reenviar convite
+          </Button>
+        )}
+        {user && !readOnly && !isSelf && user.status !== 'invited' && onResetPassword && (
           <Button onClick={onResetPassword} sx={{ mr: 'auto' }} disabled={save.isPending}>
             Redefinir senha
           </Button>

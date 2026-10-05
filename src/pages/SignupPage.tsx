@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link as RouterLink, Navigate, useNavigate } from 'react-router';
@@ -18,10 +18,13 @@ import {
   Typography,
 } from '@mui/material';
 import ExpandMore from '@mui/icons-material/ExpandMore';
+import type { LegalAcceptance } from '@/api/legal';
 import { tenantsApi, type SignupInput } from '@/api/tenants';
 import { useAuth } from '@/auth/AuthContext';
 import { BrandMark } from '@/components/BrandMark';
 import { ErrorMessages } from '@/components/ErrorMessages';
+import { LegalAcceptanceField } from '@/components/LegalAcceptanceField';
+import { useLegalAcceptance } from '@/components/useLegalAcceptance';
 import { PasswordField } from '@/components/PasswordField';
 import { PublicCardLayout } from '@/layouts/PublicCardLayout';
 import { muiField } from '@/lib/form';
@@ -57,6 +60,7 @@ const schema = z
     ownerEmail: z.email('Informe um email válido'),
     password: z.string().min(8, 'A senha precisa ter ao menos 8 caracteres').max(200, 'Máximo de 200 caracteres'),
     passwordConfirmation: z.string(),
+    legal: z.boolean().refine((value) => value, 'É preciso aceitar para continuar'),
   })
   .superRefine((values, ctx) => {
     if (values.password !== values.passwordConfirmation) {
@@ -87,7 +91,7 @@ function slugify(value: string) {
     .replace(/-+$/, '');
 }
 
-function toSignupInput(values: FormValues): SignupInput {
+function toSignupInput(values: FormValues, legalAcceptance: LegalAcceptance): SignupInput {
   return {
     name: values.name.trim(),
     subdomain: values.subdomain,
@@ -95,6 +99,7 @@ function toSignupInput(values: FormValues): SignupInput {
     ...(values.defaultDuration && { defaultAppointmentDurationMinutes: Number(values.defaultDuration) }),
     ...(values.minDuration && { minAppointmentDurationMinutes: Number(values.minDuration) }),
     owner: { name: values.ownerName.trim(), email: values.ownerEmail.trim(), password: values.password },
+    legalAcceptance,
   };
 }
 
@@ -124,10 +129,12 @@ export function SignupPage() {
       ownerEmail: '',
       password: '',
       passwordConfirmation: '',
+      legal: false,
     },
   });
 
   const subdomain = useWatch({ control, name: 'subdomain' });
+  const legal = useLegalAcceptance();
 
   // O cadastro é da plataforma: no endereço de uma clínica, só faz sentido o login.
   if (brandingStatus === 'found') return <Navigate to="/login" replace />;
@@ -135,7 +142,7 @@ export function SignupPage() {
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError(null);
     try {
-      await tenantsApi.signup(toSignupInput(values));
+      await tenantsApi.signup(toSignupInput(values, legal.acceptance!));
     } catch (error) {
       setSubmitError(error);
       return;
@@ -298,9 +305,22 @@ export function SignupPage() {
           </AccordionDetails>
         </Accordion>
 
+        <Controller
+          name="legal"
+          control={control}
+          render={({ field, fieldState }) => (
+            <LegalAcceptanceField
+              checked={field.value}
+              onChange={field.onChange}
+              error={fieldState.error?.message}
+              loadError={legal.error}
+            />
+          )}
+        />
+
         <ErrorMessages error={submitError} />
 
-        <Button type="submit" variant="contained" size="large" loading={isSubmitting}>
+        <Button type="submit" variant="contained" size="large" loading={isSubmitting} disabled={!legal.acceptance}>
           Criar clínica
         </Button>
 
