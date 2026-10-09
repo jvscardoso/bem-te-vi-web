@@ -20,6 +20,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
  */
 const REQUIRES_READ: Partial<Record<PermissionKey, PermissionKey>> = {
   'patients:write': 'patients:read',
+  'patients:export': 'patients:read',
   'appointments:write': 'appointments:read',
   'appointments:all': 'appointments:read',
   'billing:write': 'billing:read',

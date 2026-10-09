@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink, useNavigate } from 'react-router';
 import {
@@ -15,7 +16,7 @@ import {
 } from '@mui/material';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import { patientsApi, patientsKeys } from '@/api/patients';
-import { useTenantId } from '@/auth/AuthContext';
+import { useAuth, useTenantId } from '@/auth/AuthContext';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessages } from '@/components/ErrorMessages';
 import { ListPagination } from '@/components/ListPagination';
@@ -23,6 +24,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { SearchField } from '@/components/SearchField';
 import { useNotify } from '@/components/notifications/NotificationContext';
 import { formatCpf, formatDateTime } from '@/lib/format';
+import { ExportPatientDialog } from './export/ExportPatientDialog';
 import { useListSearchParams } from '@/lib/useListSearchParams';
 
 export function RemovedPatientsPage() {
@@ -30,6 +32,10 @@ export function RemovedPatientsPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const notify = useNotify();
+  const { can } = useAuth();
+  // Pedido do titular (LGPD) pode chegar depois da remoção: a exportação vale para removidos.
+  const canExport = can('patients:export');
+  const [exporting, setExporting] = useState<{ id: string; fullName: string } | null>(null);
   const list = useListSearchParams();
   const params = { q: list.q || undefined, page: list.page, pageSize: list.pageSize };
 
@@ -106,7 +112,12 @@ export function RemovedPatientsPage() {
                     <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, whiteSpace: 'nowrap' }}>
                       {formatDateTime(patient.deletedAt)}
                     </TableCell>
-                    <TableCell align="right">
+                    <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                      {canExport && (
+                        <Button size="small" onClick={() => setExporting(patient)}>
+                          Exportar dados
+                        </Button>
+                      )}
                       <Button
                         size="small"
                         onClick={() => restore.mutate(patient.id)}
@@ -127,6 +138,8 @@ export function RemovedPatientsPage() {
           <ListPagination meta={query.data.meta} onPageChange={list.setPage} onPageSizeChange={list.setPageSize} />
         )}
       </Paper>
+
+      {exporting && <ExportPatientDialog patient={exporting} onClose={() => setExporting(null)} />}
     </>
   );
 }

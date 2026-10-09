@@ -1,5 +1,14 @@
 import { api } from './client';
-import type { Page, Patient, UUID } from './types';
+import type {
+  AnamnesisFieldType,
+  AppointmentStatus,
+  ChargeStatus,
+  ISODateTime,
+  Page,
+  Patient,
+  PaymentMethod,
+  UUID,
+} from './types';
 
 export interface PatientAddress {
   cep?: string;
@@ -28,6 +37,40 @@ export interface PatientListParams {
   pageSize?: number;
 }
 
+/** Arquivo de exportação dos dados do paciente (LGPD, `GET /patients/:id/export`). */
+export interface PatientExport {
+  format: 'bem-te-vi.patient-export';
+  version: number;
+  exportedAt: ISODateTime;
+  clinic: { name: string };
+  patient: Omit<Patient, 'tenantId'>;
+  clinicalRecords: {
+    id: UUID;
+    createdAt: ISODateTime;
+    form: { id: UUID; name: string };
+    filledBy: { id: UUID; name: string } | null;
+    /** Na ordem do formulário; `label`/`type` null = campo retirado do formulário depois da ficha. */
+    answers: { key: string; label: string | null; type: AnamnesisFieldType | null; value: unknown }[];
+  }[];
+  appointments: {
+    id: UUID;
+    scheduledAt: ISODateTime;
+    endsAt: ISODateTime;
+    status: AppointmentStatus;
+    notes: string | null;
+    professional: { id: UUID; name: string };
+  }[];
+  charges: {
+    id: UUID;
+    description: string;
+    amountCents: number;
+    dueDate: ISODateTime;
+    status: ChargeStatus;
+    appointmentId: UUID | null;
+    payments: { id: UUID; amountCents: number; method: PaymentMethod; paidAt: ISODateTime; notes: string | null }[];
+  }[];
+}
+
 const base = (tenantId: UUID) => `/tenants/${tenantId}/patients`;
 
 export const patientsKeys = {
@@ -47,4 +90,6 @@ export const patientsApi = {
     api.patch<Patient>(`${base(tenantId)}/${id}`, input),
   remove: (tenantId: UUID, id: UUID) => api.delete(`${base(tenantId)}/${id}`),
   restore: (tenantId: UUID, id: UUID) => api.post<Patient>(`${base(tenantId)}/${id}/restore`),
+  /** Tudo o que a clínica guarda sobre o paciente, inclusive removido. Exige `patients:export` e fica na auditoria. */
+  export: (tenantId: UUID, id: UUID) => api.get<PatientExport>(`${base(tenantId)}/${id}/export`),
 };

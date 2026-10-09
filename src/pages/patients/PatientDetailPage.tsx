@@ -4,6 +4,7 @@ import { Link as RouterLink, useNavigate, useParams, useSearchParams } from 'rea
 import { Box, Button, Skeleton, Stack, Tab, Tabs, Typography } from '@mui/material';
 import DeleteOutlineOutlined from '@mui/icons-material/DeleteOutlineOutlined';
 import EditOutlined from '@mui/icons-material/EditOutlined';
+import FileDownloadOutlined from '@mui/icons-material/FileDownloadOutlined';
 import { patientsApi, patientsKeys } from '@/api/patients';
 import type { Patient } from '@/api/types';
 import { useAuth, useTenantId } from '@/auth/AuthContext';
@@ -15,12 +16,13 @@ import { SectionCard } from '@/components/SectionCard';
 import { useNotify } from '@/components/notifications/NotificationContext';
 import { isApiError } from '@/lib/errors';
 import { ageFromBirthDate, formatCpf, formatDate } from '@/lib/format';
-import { maskCep } from '@/lib/masks';
+import { addressLines } from './address';
 import { PatientNotFound } from './PatientNotFound';
 import { PatientAnamnesisTab } from './anamnesis/PatientAnamnesisTab';
 import { PatientAppointmentsTab } from './appointments/PatientAppointmentsTab';
 import { PatientAuditTab } from './audit/PatientAuditTab';
 import { PatientChargesTab } from './charges/PatientChargesTab';
+import { ExportPatientDialog } from './export/ExportPatientDialog';
 
 interface TabDef {
   value: string;
@@ -42,6 +44,7 @@ export function PatientDetailPage() {
   const { can } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const query = useQuery({
     queryKey: patientsKeys.detail(tenantId, id),
@@ -68,21 +71,28 @@ export function PatientDetailPage() {
         title={patient.fullName}
         subtitle={subtitle || undefined}
         actions={
-          can('patients:write') && (
-            <>
-              <Button color="error" startIcon={<DeleteOutlineOutlined />} onClick={() => setConfirmRemove(true)}>
-                Remover
+          <>
+            {can('patients:export') && (
+              <Button startIcon={<FileDownloadOutlined />} onClick={() => setExporting(true)}>
+                Exportar dados (LGPD)
               </Button>
-              <Button
-                component={RouterLink}
-                to={`/pacientes/${patient.id}/editar`}
-                variant="contained"
-                startIcon={<EditOutlined />}
-              >
-                Editar
-              </Button>
-            </>
-          )
+            )}
+            {can('patients:write') && (
+              <>
+                <Button color="error" startIcon={<DeleteOutlineOutlined />} onClick={() => setConfirmRemove(true)}>
+                  Remover
+                </Button>
+                <Button
+                  component={RouterLink}
+                  to={`/pacientes/${patient.id}/editar`}
+                  variant="contained"
+                  startIcon={<EditOutlined />}
+                >
+                  Editar
+                </Button>
+              </>
+            )}
+          </>
         }
       />
 
@@ -111,26 +121,24 @@ export function PatientDetailPage() {
       )}
 
       <RemovePatientDialog patient={patient} open={confirmRemove} onClose={() => setConfirmRemove(false)} />
+      {exporting && <ExportPatientDialog patient={patient} onClose={() => setExporting(false)} />}
     </>
   );
 }
 
 function PatientData({ patient }: { patient: Patient }) {
-  const address = (patient.address ?? {}) as Record<string, unknown>;
-  const text = (key: string) => (typeof address[key] === 'string' ? (address[key] as string) : '');
-
-  const street = [text('logradouro'), text('numero')].filter(Boolean).join(', ');
-  const cityLine = [text('bairro'), [text('cidade'), text('uf')].filter(Boolean).join('/')].filter(Boolean).join(' · ');
-  const addressLines = [
-    [street, text('complemento')].filter(Boolean).join(' — '),
-    cityLine,
-    text('cep') && `CEP ${maskCep(text('cep'))}`,
-  ].filter(Boolean);
+  const lines = addressLines(patient.address);
 
   return (
     <Stack spacing={3} sx={{ maxWidth: 960 }}>
       <SectionCard title="Dados pessoais">
-        <Box sx={{ display: 'grid', gap: 2.5, gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' } }}>
+        <Box
+          sx={{
+            display: 'grid',
+            gap: 2.5,
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
+          }}
+        >
           <Field label="Nome completo">{patient.fullName}</Field>
           <Field label="CPF">{formatCpf(patient.cpf)}</Field>
           <Field label="Data de nascimento">
@@ -142,9 +150,9 @@ function PatientData({ patient }: { patient: Patient }) {
       </SectionCard>
 
       <SectionCard title="Endereço">
-        {addressLines.length > 0 ? (
+        {lines.length > 0 ? (
           <Box>
-            {addressLines.map((line) => (
+            {lines.map((line) => (
               <Typography key={line}>{line}</Typography>
             ))}
           </Box>
@@ -198,8 +206,8 @@ function RemovePatientDialog({ patient, open, onClose }: { patient: Patient; ope
       title="Remover paciente?"
       description={
         <>
-          <strong>{patient.fullName}</strong> deixará de aparecer nas listas e não poderá receber novos agendamentos
-          nem cobranças. Os dados, anamneses e o histórico são mantidos e o cadastro pode ser restaurado depois.
+          <strong>{patient.fullName}</strong> deixará de aparecer nas listas e não poderá receber novos agendamentos nem
+          cobranças. Os dados, anamneses e o histórico são mantidos e o cadastro pode ser restaurado depois.
         </>
       }
       confirmLabel="Remover"

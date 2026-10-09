@@ -111,6 +111,14 @@ export function detailSummary(entry: AuditLogEntry): string | null {
       const total = typeof details.total === 'number' ? ` · ${details.total} resultado(s)` : '';
       return details.q ? `Busca "${String(details.q)}"${total}` : `Lista sem busca${total}`;
     }
+    case 'patient.export': {
+      const parts = [
+        typeof details.clinicalRecords === 'number' && `${details.clinicalRecords} ficha(s)`,
+        typeof details.appointments === 'number' && `${details.appointments} agendamento(s)`,
+        typeof details.charges === 'number' && `${details.charges} cobrança(s)`,
+      ].filter(Boolean);
+      return parts.length > 0 ? parts.join(' · ') : null;
+    }
     case 'clinical_record.list':
       return typeof details.count === 'number' ? `${details.count} ficha(s)` : null;
     default:
