@@ -138,6 +138,10 @@ export const router = createBrowserRouter([
                     children: [{ path: '/papeis', lazy: page(() => import('@/pages/roles/RolesPage'), 'RolesPage') }],
                   },
                   {
+                    element: <RequirePermission permission="audit:read" />,
+                    children: [{ path: '/auditoria', lazy: page(() => import('@/pages/audit/AuditPage'), 'AuditPage') }],
+                  },
+                  {
                     element: <RequirePermission permission="tenant:manage" />,
                     children: [
                       {

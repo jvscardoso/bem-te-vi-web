@@ -19,6 +19,7 @@ import { maskCep } from '@/lib/masks';
 import { PatientNotFound } from './PatientNotFound';
 import { PatientAnamnesisTab } from './anamnesis/PatientAnamnesisTab';
 import { PatientAppointmentsTab } from './appointments/PatientAppointmentsTab';
+import { PatientAuditTab } from './audit/PatientAuditTab';
 import { PatientChargesTab } from './charges/PatientChargesTab';
 
 interface TabDef {
@@ -32,6 +33,7 @@ const TABS: TabDef[] = [
   { value: 'anamneses', label: 'Anamneses' },
   { value: 'agendamentos', label: 'Agendamentos', permission: 'appointments:read' },
   { value: 'cobrancas', label: 'Cobranças', permission: 'billing:read' },
+  { value: 'historico', label: 'Histórico de acessos', permission: 'audit:read' },
 ];
 
 export function PatientDetailPage() {
@@ -102,6 +104,8 @@ export function PatientDetailPage() {
         <PatientAnamnesisTab patient={patient} />
       ) : tab === 'agendamentos' ? (
         <PatientAppointmentsTab patient={patient} />
+      ) : tab === 'historico' ? (
+        <PatientAuditTab patient={patient} />
       ) : (
         <PatientChargesTab patient={patient} />
       )}

@@ -7,11 +7,11 @@ export interface PermissionGroup {
 
 /** Agrupamento por área para o editor de papéis (chaves fora da lista caem em "Outras"). */
 export const PERMISSION_GROUPS: PermissionGroup[] = [
-  { title: 'Pacientes', keys: ['patients:read', 'patients:write'] },
+  { title: 'Pacientes', keys: ['patients:read', 'patients:write', 'patients:export'] },
   { title: 'Agenda', keys: ['appointments:read', 'appointments:write', 'appointments:all'] },
   { title: 'Financeiro', keys: ['billing:read', 'billing:write'] },
   { title: 'Anamnese', keys: ['anamnesis_templates:manage'] },
-  { title: 'Administração', keys: ['users:manage', 'roles:manage', 'tenant:manage'] },
+  { title: 'Administração', keys: ['users:manage', 'roles:manage', 'tenant:manage', 'audit:read'] },
 ];
 
 /**

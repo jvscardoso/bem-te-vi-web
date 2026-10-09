@@ -7,6 +7,7 @@ import DomainOutlined from '@mui/icons-material/DomainOutlined';
 import ManageAccountsOutlined from '@mui/icons-material/ManageAccountsOutlined';
 import PaymentsOutlined from '@mui/icons-material/PaymentsOutlined';
 import PeopleOutlined from '@mui/icons-material/PeopleOutlined';
+import PolicyOutlined from '@mui/icons-material/PolicyOutlined';
 import SettingsOutlined from '@mui/icons-material/SettingsOutlined';
 import type { PermissionRequirement } from '@/auth/permissions';
 
@@ -43,6 +44,7 @@ export const clinicNavigation: NavSection[] = [
       { label: 'Usuários', path: '/usuarios', icon: <ManageAccountsOutlined />, permission: 'users:manage' },
       { label: 'Papéis e permissões', path: '/papeis', icon: <AdminPanelSettingsOutlined />, permission: 'roles:manage' },
       { label: 'Configurações', path: '/configuracoes', icon: <SettingsOutlined />, permission: 'tenant:manage' },
+      { label: 'Auditoria', path: '/auditoria', icon: <PolicyOutlined />, permission: 'audit:read' },
     ],
   },
 ];

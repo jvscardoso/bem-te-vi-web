@@ -19,6 +19,12 @@ const queryClient = new QueryClient({
   },
 });
 
+// Toda leitura de paciente e de fichas de anamnese é registrada na trilha de auditoria (LGPD):
+// voltar o foco para a aba não deve gerar um novo "Visualizou o cadastro".
+for (const root of ['patients', 'anamnesis-records']) {
+  queryClient.setQueryDefaults([root], { refetchOnWindowFocus: false });
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
