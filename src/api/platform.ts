@@ -21,4 +21,10 @@ export const platformApi = {
   /** Suspender tem efeito imediato: a equipe da clínica recebe 401 e a marca pública some. */
   setStatus: (id: UUID, status: TenantStatus) =>
     api.patch<{ id: UUID; name: string; status: TenantStatus }>(`/platform/tenants/${id}/status`, { status }),
+  /**
+   * Exclusão definitiva, sem volta: só de clínica que pediu o encerramento e depois da carência
+   * (409 com a data, se ainda não). `confirmSubdomain` precisa ser o subdomínio da clínica.
+   */
+  deleteTenant: (id: UUID, confirmSubdomain: string) =>
+    api.delete(`/platform/tenants/${id}`, { body: { confirmSubdomain } }),
 };

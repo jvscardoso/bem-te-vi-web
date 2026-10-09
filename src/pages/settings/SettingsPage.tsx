@@ -9,12 +9,14 @@ import { BrandingTab } from './BrandingTab';
 import { DomainTab } from './DomainTab';
 import { GeneralTab } from './GeneralTab';
 import { ScheduleTab } from './ScheduleTab';
+import { ClosureTab } from './closure/ClosureTab';
 
 const TABS = [
   { value: 'dados', label: 'Dados' },
   { value: 'agenda', label: 'Agenda' },
   { value: 'marca', label: 'Marca' },
   { value: 'dominio', label: 'Domínio próprio' },
+  { value: 'encerrar', label: 'Encerrar conta' },
 ] as const;
 
 type TabValue = (typeof TABS)[number]['value'];
@@ -54,6 +56,7 @@ export function SettingsPage() {
           {tab === 'agenda' && <ScheduleTab tenant={query.data} />}
           {tab === 'marca' && <BrandingTab tenant={query.data} />}
           {tab === 'dominio' && <DomainTab tenant={query.data} />}
+          {tab === 'encerrar' && <ClosureTab />}
         </Box>
       )}
     </Box>

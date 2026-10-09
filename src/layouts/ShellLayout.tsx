@@ -26,6 +26,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import { useAuth } from '@/auth/AuthContext';
 import { isPlatformUser } from '@/auth/permissions';
 import { BrandMark } from '@/components/BrandMark';
+import { ClosureBanner } from '@/pages/settings/closure/ClosureBanner';
 import type { NavSection } from './navigation';
 
 const DRAWER_WIDTH = 260;
@@ -90,6 +91,7 @@ export function ShellLayout({ navigation, areaLabel }: ShellLayoutProps) {
 
       <Box component="main" sx={{ flexGrow: 1, minWidth: 0, p: { xs: 2, sm: 3 } }}>
         <Toolbar />
+        <ClosureBanner />
         <Outlet />
       </Box>
     </Box>

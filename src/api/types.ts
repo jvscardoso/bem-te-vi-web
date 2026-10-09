@@ -36,6 +36,8 @@ export interface Tenant {
   id: UUID; name: string; subdomain: string; customDomain: string | null; customDomainVerifiedAt: ISODateTime | null;
   status: 'active' | 'suspended'; isPlatform: boolean;
   defaultAppointmentDurationMinutes: number; minAppointmentDurationMinutes: number;
+  /** Pedido de encerramento da conta (LGPD); null = sem pedido ativo. */
+  closureRequestedAt: ISODateTime | null;
   createdAt: ISODateTime; updatedAt: ISODateTime;
   branding?: TenantBranding | null;
 }
@@ -109,5 +111,6 @@ export interface BillingSummary {
 
 export interface PlatformTenant {
   id: UUID; name: string; subdomain: string; customDomain: string | null;
-  status: 'active' | 'suspended'; createdAt: ISODateTime; _count: { users: number; patients: number };
+  status: 'active' | 'suspended'; closureRequestedAt: ISODateTime | null; createdAt: ISODateTime;
+  _count: { users: number; patients: number };
 }

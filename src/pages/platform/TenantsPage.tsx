@@ -25,6 +25,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { SearchField } from '@/components/SearchField';
 import { useNotify } from '@/components/notifications/NotificationContext';
 import { formatDate } from '@/lib/format';
+import { DeleteTenantDialog } from './DeleteTenantDialog';
 import { useListSearchParams } from '@/lib/useListSearchParams';
 
 const APP_BASE_DOMAIN = import.meta.env.VITE_APP_BASE_DOMAIN?.trim() || null;
@@ -42,6 +43,7 @@ export function TenantsPage() {
   const list = useListSearchParams();
   const params = { q: list.q || undefined, page: list.page, pageSize: list.pageSize };
   const [pending, setPending] = useState<{ tenant: PlatformTenant; status: TenantStatus } | null>(null);
+  const [deleting, setDeleting] = useState<PlatformTenant | null>(null);
 
   const query = useQuery({
     queryKey: platformKeys.list(params),
@@ -124,7 +126,16 @@ export function TenantsPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Chip size="small" variant="outlined" label={status.label} color={status.color} />
+                        <Stack spacing={0.5} sx={{ alignItems: 'flex-start' }}>
+                          <Chip size="small" variant="outlined" label={status.label} color={status.color} />
+                          {tenant.closureRequestedAt && (
+                            <Chip
+                              size="small"
+                              color="warning"
+                              label={`Encerramento pedido em ${formatDate(tenant.closureRequestedAt)}`}
+                            />
+                          )}
+                        </Stack>
                       </TableCell>
                       <TableCell align="right" sx={hideOnMobile}>
                         {tenant._count.users}
@@ -133,7 +144,13 @@ export function TenantsPage() {
                         {tenant._count.patients}
                       </TableCell>
                       <TableCell sx={{ ...hideOnMobile, whiteSpace: 'nowrap' }}>{formatDate(tenant.createdAt)}</TableCell>
-                      <TableCell align="right">
+                      <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                        {/* Só clínica que pediu o encerramento; a carência é conferida pela API. */}
+                        {tenant.closureRequestedAt && (
+                          <Button size="small" color="error" onClick={() => setDeleting(tenant)}>
+                            Excluir definitivamente
+                          </Button>
+                        )}
                         {tenant.status === 'active' ? (
                           <Button size="small" color="error" onClick={() => setPending({ tenant, status: 'suspended' })}>
                             Suspender
@@ -156,6 +173,18 @@ export function TenantsPage() {
           <ListPagination meta={query.data.meta} onPageChange={list.setPage} onPageSizeChange={list.setPageSize} />
         )}
       </Paper>
+
+      {deleting && (
+        <DeleteTenantDialog
+          tenant={deleting}
+          onClose={() => setDeleting(null)}
+          onDeleted={(tenant) => {
+            setDeleting(null);
+            notify(`${tenant.name} foi excluída definitivamente.`);
+            void queryClient.invalidateQueries({ queryKey: platformKeys.all });
+          }}
+        />
+      )}
 
       <ConfirmDialog
         open={pending !== null}

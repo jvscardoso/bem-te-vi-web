@@ -1,6 +1,6 @@
 import { api } from './client';
 import type { LegalAcceptance } from './legal';
-import type { DomainVerification, Tenant, TenantBranding, UUID } from './types';
+import type { DomainVerification, ISODateTime, Tenant, TenantBranding, UUID } from './types';
 
 export interface SignupInput {
   name: string;
@@ -36,8 +36,26 @@ export interface BrandingUpdate {
   secondaryColor?: string | null;
 }
 
+/** Estado do encerramento da conta (LGPD). Sem pedido ativo, as datas vêm null. */
+export interface ClosureState {
+  closureRequestedAt: ISODateTime | null;
+  /** Fim da carência: a partir daqui a plataforma pode excluir os dados. */
+  deletionAvailableAt: ISODateTime | null;
+  graceDays: number;
+}
+
+/** Exportação completa da clínica. Só o cabeçalho é tipado: o resto vai direto para o arquivo. */
+export interface ClinicExport {
+  format: 'bem-te-vi.clinic-export';
+  version: number;
+  exportedAt: ISODateTime;
+  clinic: { subdomain: string; name: string };
+  [section: string]: unknown;
+}
+
 export const tenantKeys = {
   detail: (tenantId: UUID) => ['tenant', tenantId] as const,
+  closure: (tenantId: UUID) => ['tenant', tenantId, 'closure'] as const,
   domain: (tenantId: UUID) => ['tenant', tenantId, 'domain'] as const,
 };
 
@@ -61,6 +79,19 @@ export const tenantsApi = {
   },
   /** Remove o logo enviado (volta ao padrão). */
   deleteLogo: (tenantId: UUID) => api.delete<TenantBranding>(`/tenants/${tenantId}/branding/logo`),
+
+  /**
+   * Todos os dados da clínica num JSON (pode levar alguns segundos). Exige `tenant:manage` e
+   * `patients:export`, e fica registrado na auditoria (`tenant.export`).
+   */
+  exportAll: (tenantId: UUID) => api.get<ClinicExport>(`/tenants/${tenantId}/export`),
+
+  closure: (tenantId: UUID) => api.get<ClosureState>(`/tenants/${tenantId}/closure`),
+  /** Exige a senha de quem pede: 400 "Senha incorreta" (não desloga), 409 se já foi pedido. */
+  requestClosure: (tenantId: UUID, password: string) =>
+    api.post<ClosureState>(`/tenants/${tenantId}/closure`, { password }),
+  /** Cancela durante a carência; 409 se não há pedido. */
+  cancelClosure: (tenantId: UUID) => api.delete<ClosureState>(`/tenants/${tenantId}/closure`),
 
   /** 404 quando a clínica não tem domínio próprio configurado. */
   domain: (tenantId: UUID) => api.get<DomainVerification>(`/tenants/${tenantId}/domain`),

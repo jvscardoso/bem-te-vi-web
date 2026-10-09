@@ -111,8 +111,10 @@ export function detailSummary(entry: AuditLogEntry): string | null {
       const total = typeof details.total === 'number' ? ` · ${details.total} resultado(s)` : '';
       return details.q ? `Busca "${String(details.q)}"${total}` : `Lista sem busca${total}`;
     }
+    case 'tenant.export':
     case 'patient.export': {
       const parts = [
+        typeof details.patients === 'number' && `${details.patients} paciente(s)`,
         typeof details.clinicalRecords === 'number' && `${details.clinicalRecords} ficha(s)`,
         typeof details.appointments === 'number' && `${details.appointments} agendamento(s)`,
         typeof details.charges === 'number' && `${details.charges} cobrança(s)`,
