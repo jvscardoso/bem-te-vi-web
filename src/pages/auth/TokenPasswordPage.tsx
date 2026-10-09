@@ -1,10 +1,10 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
 import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router';
 import { Alert, Box, Button, Link, Stack, Typography } from '@mui/material';
 import { ApiError } from '@/api/client';
-import type { LegalAcceptance } from '@/api/legal';
+import { isOutdatedLegalVersion, type LegalAcceptance } from '@/api/legal';
 import { session } from '@/auth/session';
 import { BrandMark } from '@/components/BrandMark';
 import { ErrorMessages } from '@/components/ErrorMessages';
@@ -75,8 +75,10 @@ export function TokenPasswordPage({
     control,
     handleSubmit,
     getValues,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({ defaultValues: { password: '', confirmation: '', legal: false } });
+  const legalChecked = useWatch({ control, name: 'legal' });
 
   const save = useMutation({
     mutationFn: (password: string) =>
@@ -85,6 +87,13 @@ export function TokenPasswordPage({
       // A troca encerra todas as sessões do usuário, inclusive alguma aberta neste navegador.
       session.clear('logout');
       navigate('/login', { replace: true, state: { email, notice: successNotice } satisfies LoginNotice });
+    },
+    onError: (error) => {
+      // Os documentos mudaram com a tela aberta (o link continua valendo): versões novas e novo aceite.
+      if (isOutdatedLegalVersion(error)) {
+        setValue('legal', false);
+        void legal.refresh();
+      }
     },
   });
 
@@ -160,7 +169,7 @@ export function TokenPasswordPage({
               variant="contained"
               size="large"
               loading={save.isPending}
-              disabled={requireLegalAcceptance && !legal.acceptance}
+              disabled={requireLegalAcceptance && (!legal.acceptance || !legalChecked)}
             >
               {submitLabel}
             </Button>

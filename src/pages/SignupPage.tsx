@@ -18,7 +18,7 @@ import {
   Typography,
 } from '@mui/material';
 import ExpandMore from '@mui/icons-material/ExpandMore';
-import type { LegalAcceptance } from '@/api/legal';
+import { isOutdatedLegalVersion, type LegalAcceptance } from '@/api/legal';
 import { tenantsApi, type SignupInput } from '@/api/tenants';
 import { useAuth } from '@/auth/AuthContext';
 import { BrandMark } from '@/components/BrandMark';
@@ -135,6 +135,7 @@ export function SignupPage() {
 
   const subdomain = useWatch({ control, name: 'subdomain' });
   const legal = useLegalAcceptance();
+  const legalChecked = useWatch({ control, name: 'legal' });
 
   // O cadastro é da plataforma: no endereço de uma clínica, só faz sentido o login.
   if (brandingStatus === 'found') return <Navigate to="/login" replace />;
@@ -145,6 +146,11 @@ export function SignupPage() {
       await tenantsApi.signup(toSignupInput(values, legal.acceptance!));
     } catch (error) {
       setSubmitError(error);
+      // Os documentos mudaram com a tela aberta: busca as versões novas e pede o aceite de novo.
+      if (isOutdatedLegalVersion(error)) {
+        setValue('legal', false);
+        void legal.refresh();
+      }
       return;
     }
 
@@ -320,7 +326,7 @@ export function SignupPage() {
 
         <ErrorMessages error={submitError} />
 
-        <Button type="submit" variant="contained" size="large" loading={isSubmitting} disabled={!legal.acceptance}>
+        <Button type="submit" variant="contained" size="large" loading={isSubmitting} disabled={!legal.acceptance || !legalChecked}>
           Criar clínica
         </Button>
 

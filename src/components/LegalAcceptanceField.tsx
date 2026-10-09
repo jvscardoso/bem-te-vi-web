@@ -1,4 +1,5 @@
 import { Checkbox, FormControl, FormControlLabel, FormHelperText, Link } from '@mui/material';
+import { LEGAL_DOCUMENTS } from '@/legal/documents';
 import { ErrorMessages } from './ErrorMessages';
 
 interface LegalAcceptanceFieldProps {
@@ -24,11 +25,11 @@ export function LegalAcceptanceField({ checked, onChange, error, loadError }: Le
         label={
           <>
             Li e aceito os{' '}
-            <Link href="/termos" target="_blank" rel="noopener">
+            <Link href={LEGAL_DOCUMENTS.terms.path} target="_blank" rel="noopener">
               Termos de Uso
             </Link>{' '}
             e a{' '}
-            <Link href="/privacidade" target="_blank" rel="noopener">
+            <Link href={LEGAL_DOCUMENTS.privacy.path} target="_blank" rel="noopener">
               Política de Privacidade
             </Link>
             .

@@ -11,7 +11,11 @@ export type PermissionKey =
   | 'users:manage' | 'roles:manage' | 'tenant:manage'
   | 'anamnesis_templates:manage'
   | 'billing:read' | 'billing:write'
+  | 'audit:read' | 'patients:export'
   | 'platform:manage';
+
+/** Documentos legais da plataforma (os textos ficam no front; a API guarda a versão e o aceite). */
+export type LegalDocument = 'terms' | 'privacy';
 
 export interface LoginResponse {
   accessToken: string;
@@ -20,6 +24,8 @@ export interface LoginResponse {
 export interface Me {
   userId: UUID; tenantId: UUID; roleId: UUID; permissions: PermissionKey[];
   name: string; email: string; role: { id: UUID; name: string };
+  /** Documentos cuja versão vigente o usuário ainda não aceitou: o front bloqueia o uso até o aceite. */
+  pendingLegalDocuments: LegalDocument[];
 }
 export interface ChangePasswordResponse { accessToken: string }
 

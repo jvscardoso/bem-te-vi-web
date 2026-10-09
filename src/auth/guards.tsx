@@ -5,11 +5,12 @@ import { FullScreenLoader } from '@/components/FullScreenLoader';
 import { StatusScreen } from '@/components/StatusScreen';
 import { getErrorMessages } from '@/lib/errors';
 import { useAuth } from './AuthContext';
+import { PendingLegalScreen } from './PendingLegalScreen';
 import { isPlatformUser, type PermissionRequirement } from './permissions';
 
 /** Exige sessão válida; sem ela, vai para o login lembrando o destino. */
 export function RequireAuth() {
-  const { status, error, refresh, logout } = useAuth();
+  const { status, user, error, refresh, logout } = useAuth();
   const location = useLocation();
 
   if (status === 'anonymous') return <Navigate to="/login" replace state={{ from: location }} />;
@@ -31,6 +32,8 @@ export function RequireAuth() {
       />
     );
   }
+  // Termos/Política pendentes: nada do app (clínica ou plataforma) aparece até o aceite.
+  if (user?.pendingLegalDocuments?.length) return <PendingLegalScreen pending={user.pendingLegalDocuments} />;
   return <Outlet />;
 }
 
