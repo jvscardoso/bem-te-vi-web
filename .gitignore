@@ -9,6 +9,8 @@ dist
 .DS_Store
 .idea/workspace.xml
 
-# Documentos internos (não versionados)
-regras-de-negocio.md
-docs/
+# Contas e senhas de teste do ambiente local (nunca versionar)
+docs/credenciais-de-teste.md
+
+# Anotações pessoais
+TO-DO.md

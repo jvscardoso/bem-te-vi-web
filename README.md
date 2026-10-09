@@ -10,11 +10,12 @@ O backend é a [`bem-te-vi-api`](../bem-te-vi-api) (NestJS + Prisma). A fonte da
 |---|---|
 | [`docs/status.md`](docs/status.md) | **Comece por aqui.** O que está pronto, tela por tela; situação das tasks da API; o que falta; bugs e decisões em aberto |
 | [`docs/arquitetura.md`](docs/arquitetura.md) | Pastas, rotas, sessão, marca da clínica, camada de API, estado, permissões, padrões de formulário, build |
-| [`regras-de-negocio.md`](regras-de-negocio.md) | Regras de negócio e contrato da API, do ponto de vista do front |
-| [`docs/changes/`](docs/changes/00-indice.md) | Tasks vindas da API (mudanças que o front precisa acompanhar) |
+| [`docs/regras-de-negocio.md`](docs/regras-de-negocio.md) | Regras de negócio e contrato da API, do ponto de vista do front |
+| `docs/changes/` | Tasks vindas da API, quando há alguma em aberto (hoje não há: as 11 recebidas foram concluídas) |
+| `docs/proposta-*.md` | Propostas do front para a API, ainda em aberto |
 | [`CLAUDE.md`](CLAUDE.md) | Instruções curtas para sessões de desenvolvimento com o Claude Code |
 
-> `docs/` e `regras-de-negocio.md` são documentos internos e estão no `.gitignore`: existem só na máquina de quem desenvolve.
+> `docs/credenciais-de-teste.md` (contas e senhas do ambiente local) fica fora do git, no `.gitignore`.
 
 ## Stack
 
