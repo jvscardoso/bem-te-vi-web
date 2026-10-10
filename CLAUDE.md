@@ -24,7 +24,7 @@ npm run typecheck
 
 Não há testes automatizados: valide com typecheck, lint e teste no navegador.
 
-API local (na pasta da API): `docker compose --profile app up -d --build`. Sobe a API em http://localhost:3000 e o Mailpit (emails de dev) em http://localhost:8025. Em dev, a clínica vem de `?tenant=<subdomínio>` na URL (`?tenant=` vazio = marca padrão/backoffice).
+API local (na pasta da API): `docker compose --profile app up -d --build`. Sobe a API em http://localhost:3000 e o Mailpit (emails de dev) em http://localhost:8025. Em dev, a clínica vem do subdomínio de localhost, como em produção: `http://<subdomínio>.localhost:5173` (`localhost:5173` puro = marca padrão/backoffice). O modo antigo `?tenant=<subdomínio>` ainda funciona em localhost puro, por causa dos links de email da API.
 
 ## Arquitetura em poucas linhas
 

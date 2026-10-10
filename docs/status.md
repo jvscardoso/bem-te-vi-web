@@ -55,7 +55,7 @@ Retrato do que existe no código. Leia antes de começar uma tarefa. Regras de n
 - **Busca global de pacientes (topo):** com `patients:read`, só na área da clínica (`src/layouts/PatientSearch.tsx`). A partir de 2 caracteres, com debounce de 400 ms, mostra até 6 pacientes (nome, CPF e telefone) e "Ver todos os N resultados". Escolher um paciente abre a ficha; Enter sem escolher abre `/pacientes?q=`. No desktop fica à esquerda da barra; no celular vira um ícone que abre a busca por cima da barra. Hoje acha por nome e CPF; **telefone depende da task 12 da API**.
 - **Aviso de encerramento da conta:** com pedido ativo, um banner em todas as telas da clínica para quem tem `tenant:manage`, com "Exportar dados" e "Cancelar encerramento". Os demais usuários não veem (a API só informa o pedido a quem tem `tenant:manage`).
 - **Aceite pendente de Termos/Política (LGPD):** com `pendingLegalDocuments` não vazio em `/auth/me`, o `RequireAuth` mostra um modal que não fecha (`PendingLegalScreen`) no lugar do app, tanto da clínica quanto da plataforma. "Aceitar e continuar" envia as duas versões vigentes a `POST /auth/me/legal-acceptances`; "Sair" desloga. Textos diferentes para os dois documentos pendentes e para versão nova de um só.
-- Whitelabel por endereço (subdomínio / domínio próprio; `?tenant=` em dev), tema MUI montado a partir das cores da clínica.
+- Whitelabel por endereço (subdomínio / domínio próprio; em dev, `<subdomínio>.localhost:5173`, com `?tenant=` ainda aceito em localhost puro), tema MUI montado a partir das cores da clínica.
 - Sessão com `GET /auth/me` sempre fresco; 401 desloga com aviso "sessão expirada"; 400 nunca desloga.
 - Telas e ações escondidas por permissão; acesso direto a rota sem permissão mostra "Acesso negado".
 - Divisão por rota (lazy) com chunk `vendor` separado.
@@ -115,6 +115,7 @@ Todas as 11 tasks recebidas foram concluídas e conferidas no código em 09/10/2
 - Proposta à API: nome do paciente nos registros da auditoria.
 - Proposta à API: filtro e data de liberação dos encerramentos no painel da plataforma.
 - Proposta à API: validação do cadastro de clínica antes de abri-lo na landing (nome vazio, mensagens em português, subdomínios reservados, limite de senha). Ver [`proposta-validacao-do-cadastro-de-clinica.md`](proposta-validacao-do-cadastro-de-clinica.md).
+- Proposta à API: links de email com subdomínio em dev (`<sub>.localhost:5173` em vez de `?tenant=`). Quando entregue, o front remove o modo `?tenant=`. Ver [`proposta-links-de-email-com-subdominio-em-dev.md`](proposta-links-de-email-com-subdominio-em-dev.md).
 - Aviso de encerramento para usuários sem `tenant:manage`: hoje não aparece nada, porque a API não informa. Se o produto quiser avisar toda a equipe, a API precisa expor o pedido (ex.: em `/auth/me`).
 - A equipe da plataforma deve aceitar os mesmos Termos/Política das clínicas? Hoje aceita, porque a API informa a pendência.
 - Escopo do médico sobre pacientes e evolução clínica: há propostas em `../bem-te-vi-api/docs/decisoes/` ainda sem reflexo no front.

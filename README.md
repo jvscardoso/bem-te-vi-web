@@ -57,18 +57,20 @@ npm run dev                  # http://localhost:5173
 | Variável | Uso |
 |---|---|
 | `VITE_API_URL` | URL da API (padrão `http://localhost:3000`) |
-| `VITE_DEV_TENANT` | Subdomínio da clínica usado em dev quando a URL não traz `?tenant=` |
+| `VITE_DEV_TENANT` | Subdomínio da clínica usado em `localhost` puro quando a URL não traz `?tenant=` (modo antigo) |
 | `VITE_APP_BASE_DOMAIN` | Domínio base das clínicas em produção (ex.: `bemtevi.com.br`), usado para mostrar o endereço da clínica em Configurações e no backoffice |
 
 ### 3. Escolher a clínica em dev
 
-Sem DNS, a clínica vem de `?tenant=<subdomínio>`:
+Como em produção, a clínica vem do subdomínio. Em dev, use subdomínios de `localhost`, que o Chrome e o Firefox resolvem para a sua máquina sem configurar nada:
 
 ```
-http://localhost:5173/login?tenant=clinica-demo
+http://clinica-demo.localhost:5173/login
 ```
 
-O valor fica lembrado na aba. `?tenant=` vazio volta para a marca padrão do bem-te-vi, que é por onde entram os usuários do backoffice. O login só aceita usuários da clínica do endereço.
+`http://localhost:5173` puro abre com a marca padrão do bem-te-vi, que é por onde entram os usuários do backoffice. O login só aceita usuários da clínica do endereço.
+
+O modo antigo ainda funciona em `localhost` puro: `http://localhost:5173/login?tenant=clinica-demo` (o valor fica lembrado na aba, e `?tenant=` vazio esquece). Ele continua porque os links dos emails da API em dev usam esse formato. Ver `docs/proposta-links-de-email-com-subdominio-em-dev.md`.
 
 ## Scripts
 

@@ -916,7 +916,7 @@ export interface PlatformTenant {
    - Os links dos emails apontam para `FRONTEND_URL` (padrão `http://localhost:5173`) com `?tenant=<subdomínio>`. Se o front rodar em outra porta, ajuste `FRONTEND_URL` no `.env` da API e rebuilde o container.
 2. Criar uma clínica de teste via `POST /tenants` (exemplo em [`cadastro-de-clinica-na-landing.md`](cadastro-de-clinica-na-landing.md#em-desenvolvimento)) e logar com o dono.
 3. Para o backoffice: `PLATFORM_ADMIN_EMAIL=... PLATFORM_ADMIN_PASSWORD=... npm run bootstrap:platform`.
-4. Em dev (sem `APP_BASE_DOMAIN`), resolver a marca com `GET /public/branding?host=<subdomain>`; o front pode ler o subdomínio de uma variável de ambiente ou de `?tenant=` enquanto não houver DNS.
+4. Em dev (sem `APP_BASE_DOMAIN`), resolver a marca com `GET /public/branding?host=<subdomain>`; o front usa subdomínios de `localhost` (`clinica-demo.localhost:5173` → `host=clinica-demo`) e ainda aceita `?tenant=` em localhost puro.
 5. Coleção Postman com todas as rotas e exemplos em `docs/api/bem-te-vi.postman_collection.json` (no repositório da API).
 
 ---

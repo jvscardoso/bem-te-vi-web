@@ -8,6 +8,7 @@ import { SectionCard } from '@/components/SectionCard';
 import { useNotify } from '@/components/notifications/NotificationContext';
 import { muiField } from '@/lib/form';
 import { applyBrandingToCache } from '@/theme/brandingCache';
+import { devClinicUrl } from '@/theme/brandingHost';
 
 const APP_BASE_DOMAIN = import.meta.env.VITE_APP_BASE_DOMAIN?.trim() || null;
 
@@ -42,9 +43,10 @@ export function GeneralTab({ tenant }: { tenant: Tenant }) {
       queryClient.setQueryData(tenantKeys.detail(tenant.id), (old?: Tenant) => ({ ...old, ...saved }));
       notify('Dados da clínica atualizados.');
 
-      // Em dev o endereço é simulado por ?tenant=: recarrega já no novo subdomínio.
+      // Em dev, leva ao endereço novo (em *.localhost é outra origem: a sessão fica para trás e
+      // pede login, como em produção).
       if (saved.subdomain !== tenant.subdomain && import.meta.env.DEV) {
-        window.location.assign(`/configuracoes?tenant=${encodeURIComponent(saved.subdomain)}`);
+        window.location.assign(devClinicUrl(saved.subdomain, '/configuracoes'));
       }
     },
   });
