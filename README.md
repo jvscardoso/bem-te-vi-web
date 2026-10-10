@@ -58,7 +58,7 @@ npm run dev                  # http://localhost:5173
 |---|---|
 | `VITE_API_URL` | URL da API (padrão `http://localhost:3000`) |
 | `VITE_DEV_TENANT` | Subdomínio da clínica usado em dev quando a URL não traz `?tenant=` |
-| `VITE_APP_BASE_DOMAIN` | Domínio base das clínicas em produção (ex.: `bemtevi.com.br`), usado no cadastro |
+| `VITE_APP_BASE_DOMAIN` | Domínio base das clínicas em produção (ex.: `bemtevi.com.br`), usado para mostrar o endereço da clínica em Configurações e no backoffice |
 
 ### 3. Escolher a clínica em dev
 

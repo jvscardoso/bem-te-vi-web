@@ -31,7 +31,6 @@ export const router = createBrowserRouter([
         element: <RedirectIfAuthenticated />,
         children: [
           { path: '/login', element: <LoginPage /> },
-          { path: '/cadastro', lazy: page(() => import('@/pages/SignupPage'), 'SignupPage') },
           {
             path: '/esqueci-minha-senha',
             lazy: page(() => import('@/pages/ForgotPasswordPage'), 'ForgotPasswordPage'),
@@ -43,7 +42,7 @@ export const router = createBrowserRouter([
         path: '/reset-password',
         lazy: page(() => import('@/pages/auth/ResetPasswordPage'), 'ResetPasswordPage'),
       },
-      // Textos legais: públicos, abertos em outra aba a partir do cadastro e do convite.
+      // Textos legais: públicos, abertos em outra aba a partir do convite e do aceite pendente (e linkados pela landing page).
       { path: '/termos', lazy: page(() => import('@/pages/legal/LegalDocumentPage'), 'TermsPage') },
       { path: '/privacidade', lazy: page(() => import('@/pages/legal/LegalDocumentPage'), 'PrivacyPage') },
       {

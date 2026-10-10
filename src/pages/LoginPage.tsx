@@ -22,7 +22,6 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function LoginPage() {
   const { login } = useAuth();
-  const { status: brandingStatus } = useBranding();
   const navigate = useNavigate();
   const location = useLocation();
   const [submitError, setSubmitError] = useState<unknown>(null);
@@ -90,15 +89,6 @@ export function LoginPage() {
             Esqueci minha senha
           </Link>
         </Typography>
-
-        {brandingStatus !== 'found' && (
-          <Typography variant="body2" sx={{ textAlign: 'center' }}>
-            Ainda não usa o bem-te-vi?{' '}
-            <Link component={RouterLink} to="/cadastro">
-              Cadastre sua clínica
-            </Link>
-          </Typography>
-        )}
       </Stack>
     </PublicCardLayout>
   );

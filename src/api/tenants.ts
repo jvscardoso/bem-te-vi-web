@@ -1,23 +1,8 @@
 import { api } from './client';
-import type { LegalAcceptance } from './legal';
 import type { DomainVerification, ISODateTime, Tenant, TenantBranding, UUID } from './types';
 
-export interface SignupInput {
-  name: string;
-  subdomain: string;
-  customDomain?: string;
-  defaultAppointmentDurationMinutes?: number;
-  minAppointmentDurationMinutes?: number;
-  owner: { name: string; email: string; password: string };
-  /** Aceite das versões vigentes dos Termos e da Política (obrigatório, LGPD). */
-  legalAcceptance: LegalAcceptance;
-}
-
-export interface SignupResponse {
-  tenant: Tenant;
-  role: { id: UUID; name: string };
-  owner: { id: UUID; name: string; email: string };
-}
+// O cadastro de clínica (`POST /tenants`) é feito pela landing page, não por este app:
+// ver docs/cadastro-de-clinica-na-landing.md.
 
 /** Campos editáveis da clínica (sem `owner` e sem `status`). `customDomain: null` remove. */
 export interface TenantUpdate {
@@ -60,9 +45,6 @@ export const tenantKeys = {
 };
 
 export const tenantsApi = {
-  /** Cadastro público de clínica. Não devolve token: em seguida, faça login. */
-  signup: (input: SignupInput) => api.post<SignupResponse>('/tenants', input, { auth: false }),
-
   get: (tenantId: UUID) => api.get<Tenant>(`/tenants/${tenantId}`),
   update: (tenantId: UUID, input: TenantUpdate) => api.patch<Tenant>(`/tenants/${tenantId}`, input),
   updateBranding: (tenantId: UUID, input: BrandingUpdate) =>

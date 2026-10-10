@@ -34,7 +34,7 @@ src/
 Definido em `src/router.tsx` com `createBrowserRouter`.
 
 ```
-/login, /cadastro, /esqueci-minha-senha        RedirectIfAuthenticated (logado → /)
+/login, /esqueci-minha-senha                  RedirectIfAuthenticated (logado → /)
 /reset-password, /accept-invite                públicas, sem guard (rotas FIXAS: os emails da API apontam para elas)
 /termos, /privacidade                          públicas, sem guard
 /                                              RequireAuth
@@ -78,7 +78,7 @@ Definido em `src/router.tsx` com `createBrowserRouter`.
 
 - A versão vigente de cada documento vem da API (`GET /public/legal`); o texto de cada versão fica em `src/legal/documents.ts` (`LEGAL_DOCUMENTS`), com a data de vigência. Sem texto para a versão vigente, as páginas `/termos` e `/privacidade` mostram o aviso de texto em elaboração.
 - Publicar um texto novo = cadastrá-lo com a próxima versão **e** pedir à API para subir `LEGAL_TERMS_VERSION` / `LEGAL_PRIVACY_VERSION`.
-- Aceite: `LegalAcceptanceField` + `useLegalAcceptance` no cadastro e no convite; `PendingLegalScreen` depois do login. No `400` de versão desatualizada (`isOutdatedLegalVersion`), as versões são recarregadas e o aceite é pedido de novo.
+- Aceite: `LegalAcceptanceField` + `useLegalAcceptance` no aceite de convite; `PendingLegalScreen` depois do login. No `400` de versão desatualizada (`isOutdatedLegalVersion`), as versões são recarregadas e o aceite é pedido de novo.
 
 ## Camada de chamadas à API
 
@@ -127,5 +127,5 @@ Não há testes automatizados nem ferramenta de teste instalada. A verificação
 ## Build e deploy
 
 - `npm run build` = `tsc -b && vite build` → `dist/`. Vite 8 (Rolldown) com o grupo `vendor` (react, react-dom, scheduler, react-router, @tanstack) num arquivo estável; o MUI fica na divisão automática por rota.
-- Variáveis (`.env.example`): `VITE_API_URL`, `VITE_DEV_TENANT` (só dev) e `VITE_APP_BASE_DOMAIN` (domínio das clínicas, usado no cadastro para mostrar e levar ao endereço novo).
+- Variáveis (`.env.example`): `VITE_API_URL`, `VITE_DEV_TENANT` (só dev) e `VITE_APP_BASE_DOMAIN` (domínio das clínicas, usado para mostrar o endereço em Configurações e no backoffice).
 - **Deploy ainda não configurado.** Requisitos: servir `dist/` como SPA (toda rota desconhecida devolve `index.html`, inclusive `/reset-password` e `/accept-invite`), responder em `*.<APP_BASE_DOMAIN>` e nos domínios próprios verificados, e a API com `FRONTEND_URL`/CORS apontando para o front.

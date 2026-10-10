@@ -37,7 +37,7 @@ export function RequireAuth() {
   return <Outlet />;
 }
 
-/** Telas públicas de entrada (login, cadastro): quem já está logado vai para o app. */
+/** Telas públicas de entrada (login, esqueci minha senha): quem já está logado vai para o app. */
 export function RedirectIfAuthenticated() {
   const { status } = useAuth();
   if (status === 'authenticated') return <Navigate to="/" replace />;

@@ -230,6 +230,8 @@ Recomendação: chamar `/auth/me` ao abrir o app (com token salvo) e ao voltar o
 
 `POST /tenants` (público)
 
+> **Tela na landing page, não no `bem-te-vi-web`** (desde 10/10/2026): o app é whitelabel e o login entra na clínica do endereço. Guia para a landing: [`cadastro-de-clinica-na-landing.md`](cadastro-de-clinica-na-landing.md).
+
 ```json
 {
   "name": "Clínica Exemplo",
@@ -717,7 +719,7 @@ Só para usuários da clínica-plataforma (criados por script, nunca por signup)
 
 | Tela | Rotas principais | Permissão para exibir |
 |---|---|---|
-| Signup de clínica | `GET /public/legal`, `POST /tenants` → `POST /auth/login` | pública |
+| Signup de clínica (**na landing page**, fora deste app) | `GET /public/legal`, `POST /tenants` → login da clínica nova | pública |
 | Login tematizado | `GET /public/branding`, `POST /auth/login` | pública |
 | Esqueci minha senha | `POST /auth/forgot-password` | pública |
 | Redefinir senha (`/reset-password`, link do email) | `POST /auth/reset-password` | pública |
@@ -912,7 +914,7 @@ export interface PlatformTenant {
 
 1. Na `bem-te-vi-api`: `docker compose --profile app up -d --build` sobe banco, API (`http://localhost:3000`) e **Mailpit** (`http://localhost:8025`, caixa de email falsa onde chegam os emails de recuperação de senha e convite). Alternativa sem container da API: `docker compose up -d` (só banco e Mailpit), `npm install`, `npx prisma migrate dev`, `npx prisma db seed`, `npm run start:dev`.
    - Os links dos emails apontam para `FRONTEND_URL` (padrão `http://localhost:5173`) com `?tenant=<subdomínio>`. Se o front rodar em outra porta, ajuste `FRONTEND_URL` no `.env` da API e rebuilde o container.
-2. Criar uma clínica de teste via `POST /tenants` (ou pela tela de signup) e logar com o dono.
+2. Criar uma clínica de teste via `POST /tenants` (exemplo em [`cadastro-de-clinica-na-landing.md`](cadastro-de-clinica-na-landing.md#em-desenvolvimento)) e logar com o dono.
 3. Para o backoffice: `PLATFORM_ADMIN_EMAIL=... PLATFORM_ADMIN_PASSWORD=... npm run bootstrap:platform`.
 4. Em dev (sem `APP_BASE_DOMAIN`), resolver a marca com `GET /public/branding?host=<subdomain>`; o front pode ler o subdomínio de uma variável de ambiente ou de `?tenant=` enquanto não houver DNS.
 5. Coleção Postman com todas as rotas e exemplos em `docs/api/bem-te-vi.postman_collection.json` (no repositório da API).
