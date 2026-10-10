@@ -8,6 +8,7 @@ import {
   RequirePermission,
 } from '@/auth/guards';
 import { FullScreenLoader } from '@/components/FullScreenLoader';
+import { PatientSearch } from '@/layouts/PatientSearch';
 import { ShellLayout } from '@/layouts/ShellLayout';
 import { clinicNavigation, platformNavigation } from '@/layouts/navigation';
 import { LoginPage } from '@/pages/LoginPage';
@@ -59,7 +60,7 @@ export const router = createBrowserRouter([
             element: <ClinicAreaOnly />,
             children: [
               {
-                element: <ShellLayout navigation={clinicNavigation} />,
+                element: <ShellLayout navigation={clinicNavigation} search={<PatientSearch />} />,
                 children: [
                   { path: '/inicio', lazy: page(() => import('@/pages/home/HomePage'), 'HomePage') },
                   {

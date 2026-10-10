@@ -51,6 +51,7 @@ Retrato do que existe no código. Leia antes de começar uma tarefa. Regras de n
 
 - **Modo noturno:** chave "Modo noturno" no menu do usuário (canto superior direito, junto de Minha conta e Sair). A escolha fica salva no navegador (`localStorage` `btv.colorMode`); sem escolha, segue o tema do sistema. Vale também nas telas públicas. A versão legível da exportação de paciente fica sempre clara, para imprimir.
 - **Menu lateral recolhível (desktop):** um chip redondo na borda do menu, na altura da logo, recolhe e expande o menu. Recolhido, cada item mostra o ícone com o rótulo embaixo (rótulo curto `shortLabel` em `navigation.tsx` quando o nome não cabe: "Anamnese", "Papéis", com o nome completo no tooltip), e os títulos de seção viram divisórias. A escolha fica salva no navegador (`localStorage` `btv.sidebarCollapsed`). No celular o menu continua temporário e sempre completo.
+- **Busca global de pacientes (topo):** com `patients:read`, só na área da clínica (`src/layouts/PatientSearch.tsx`). A partir de 2 caracteres, com debounce de 400 ms, mostra até 6 pacientes (nome, CPF e telefone) e "Ver todos os N resultados". Escolher um paciente abre a ficha; Enter sem escolher abre `/pacientes?q=`. No desktop fica à esquerda da barra; no celular vira um ícone que abre a busca por cima da barra. Hoje acha por nome e CPF; **telefone depende da task 12 da API**.
 - **Aviso de encerramento da conta:** com pedido ativo, um banner em todas as telas da clínica para quem tem `tenant:manage`, com "Exportar dados" e "Cancelar encerramento". Os demais usuários não veem (a API só informa o pedido a quem tem `tenant:manage`).
 - **Aceite pendente de Termos/Política (LGPD):** com `pendingLegalDocuments` não vazio em `/auth/me`, o `RequireAuth` mostra um modal que não fecha (`PendingLegalScreen`) no lugar do app, tanto da clínica quanto da plataforma. "Aceitar e continuar" envia as duas versões vigentes a `POST /auth/me/legal-acceptances`; "Sair" desloga. Textos diferentes para os dois documentos pendentes e para versão nova de um só.
 - Whitelabel por endereço (subdomínio / domínio próprio; `?tenant=` em dev), tema MUI montado a partir das cores da clínica.
@@ -61,6 +62,8 @@ Retrato do que existe no código. Leia antes de começar uma tarefa. Regras de n
 ## Tasks da API
 
 Todas as 11 tasks recebidas foram concluídas e conferidas no código em 09/10/2026. Os arquivos saíram de `docs/changes/` do front nessa data; os originais continuam na pasta da API (`../bem-te-vi-api/docs/changes/`). Tasks novas voltam a entrar em `docs/changes/`, com um `00-indice.md`.
+
+**Aberta:** task 12, busca de pacientes também pelo telefone (pedido do front para a API). Ver [`changes/00-indice.md`](changes/00-indice.md).
 
 | # | Task | Situação | Onde está no código |
 |---|---|---|---|
@@ -83,6 +86,7 @@ Todas as 11 tasks recebidas foram concluídas e conferidas no código em 09/10/2
 3. Landing page do produto (conversado e adiado; decidir se fica neste repositório ou fora).
 4. Testes automatizados (nenhum existe).
 5. Build/deploy de produção: não há configuração de hospedagem nem de fallback de SPA (ver [`arquitetura.md`](arquitetura.md#build-e-deploy)).
+6. **Busca por telefone:** task 12 aguardando a API (o front só precisa trocar os textos de ajuda depois).
 
 ## Limitações e bugs conhecidos
 
@@ -93,7 +97,7 @@ Todas as 11 tasks recebidas foram concluídas e conferidas no código em 09/10/2
 - **Impressão do formato legível** não foi testada pela automação (abre a janela de impressão do sistema). As regras de `@media print` em `PatientExportView` escondem o app e soltam o diálogo para imprimir todas as páginas; vale conferir manualmente.
 - **Exportar paciente removido** fica na tela de removidos, que exige `patients:write`. Quem tem só `patients:export` não chega lá (os admins têm as duas).
 - **Filtro por usuário na auditoria** só aparece para quem também tem `users:manage` (a lista de usuários exige essa permissão). Lista os primeiros 100 usuários.
-- **Telas de paciente geram registros na trilha:** cada abertura de ficha, lista ou aba de anamneses é um registro. Para não poluir, as consultas de pacientes e de fichas não são refeitas ao voltar o foco para a aba (`setQueryDefaults` em `main.tsx`). Depois de salvar uma edição, a ficha é relida, e isso conta como nova visualização. O painel inicial também consulta a lista de pacientes (para o total) e gera um "Pesquisou pacientes" a cada abertura.
+- **Telas de paciente geram registros na trilha:** cada abertura de ficha, lista ou aba de anamneses é um registro. Para não poluir, as consultas de pacientes e de fichas não são refeitas ao voltar o foco para a aba (`setQueryDefaults` em `main.tsx`). Depois de salvar uma edição, a ficha é relida, e isso conta como nova visualização. O painel inicial também consulta a lista de pacientes (para o total) e gera um "Pesquisou pacientes" a cada abertura. A busca global do topo gera um "Pesquisou pacientes" por termo buscado (mínimo de 2 caracteres e 400 ms sem digitar, para não registrar letra por letra).
 - **Nome de quem preencheu a anamnese:** a API devolve só `filledByUserId`. O front resolve o nome pela lista de profissionais; sem `appointments:all` essa lista só tem o próprio usuário, então o nome de outros não aparece. Sugestão para a API: devolver `filledBy { id, name }`.
 - **Aceite pendente no meio da sessão:** o `/auth/me` é relido ao abrir o app e ao voltar o foco para a aba (`staleTime` 30 s). Se a API publicar uma versão nova, quem já está com o app aberto só vê o modal na próxima releitura, não na hora.
 - **Mensagem do 400 de versão desatualizada** continua visível no cadastro e no convite depois que o aceite é desmarcado; some no próximo envio.

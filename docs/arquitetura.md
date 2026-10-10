@@ -14,7 +14,7 @@ src/
   auth/               Sessão (token), AuthProvider (/auth/me), guards e helpers de permissão
   theme/              Marca da clínica: host, BrandingProvider, tema MUI, cache da marca
   legal/              Textos dos Termos de Uso e da Política de Privacidade, por versão
-  layouts/            ShellLayout (menu lateral + topo), PublicCardLayout (telas públicas), navigation.tsx (itens com `shortLabel` quando o nome não cabe no menu recolhido, ~12 caracteres)
+  layouts/            ShellLayout (menu lateral + topo, recebe a busca em `search`), PatientSearch (busca global de pacientes), PublicCardLayout (telas públicas), navigation.tsx (itens com `shortLabel` quando o nome não cabe no menu recolhido, ~12 caracteres)
   components/         Componentes reutilizáveis (diálogos, campos, estados vazios, notificações)
   lib/                Funções puras e hooks utilitários (datas, formatos, máscaras, formulários, erros)
   pages/              Telas, uma pasta por área (patients, schedule, billing, settings, users, roles…)

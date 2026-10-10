@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { NavLink, Outlet, useNavigate, useNavigation } from 'react-router';
 import {
   AppBar,
@@ -68,10 +68,12 @@ interface ShellLayoutProps {
   navigation: NavSection[];
   /** Rótulo exibido abaixo da marca (ex.: "Backoffice"). */
   areaLabel?: string;
+  /** Busca da barra superior (só a área da clínica tem). */
+  search?: ReactNode;
 }
 
 /** Layout autenticado: menu lateral filtrado por permissão + barra superior. */
-export function ShellLayout({ navigation, areaLabel }: ShellLayoutProps) {
+export function ShellLayout({ navigation, areaLabel, search }: ShellLayoutProps) {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -124,7 +126,10 @@ export function ShellLayout({ navigation, areaLabel }: ShellLayoutProps) {
               <BrandMark size={32} />
             </>
           )}
+          {/* No desktop a busca ocupa a esquerda da barra; no celular, fica junto do usuário. */}
+          {isDesktop && search}
           <Box sx={{ flexGrow: 1 }} />
+          {!isDesktop && search}
           <UserMenu />
         </Toolbar>
       </AppBar>
