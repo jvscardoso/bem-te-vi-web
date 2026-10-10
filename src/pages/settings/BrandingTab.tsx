@@ -24,6 +24,7 @@ import { useNotify } from '@/components/notifications/NotificationContext';
 import { muiField } from '@/lib/form';
 import { LogoSection } from './LogoSection';
 import { applyBrandingToCache } from '@/theme/brandingCache';
+import { useColorMode } from '@/theme/colorMode';
 import { createAppTheme, DEFAULT_PRIMARY, DEFAULT_SECONDARY } from '@/theme/createAppTheme';
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -187,7 +188,11 @@ interface BrandPreviewProps {
 
 /** Miniatura do login e do menu com o tema montado pelos valores atuais (sem salvar). */
 function BrandPreview({ name, logoUrl, primaryColor, secondaryColor }: BrandPreviewProps) {
-  const theme = useMemo(() => createAppTheme({ primaryColor, secondaryColor }), [primaryColor, secondaryColor]);
+  const { mode } = useColorMode();
+  const theme = useMemo(
+    () => createAppTheme({ primaryColor, secondaryColor, mode }),
+    [primaryColor, secondaryColor, mode],
+  );
 
   return (
     <ThemeProvider theme={theme}>

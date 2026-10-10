@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import {
   AppBar,
   Box,
@@ -15,6 +15,7 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material';
+import { ThemeProvider } from '@mui/material/styles';
 import PrintOutlined from '@mui/icons-material/PrintOutlined';
 import type { AnswerValue } from '@/api/anamnesis';
 import type { PatientExport } from '@/api/patients';
@@ -23,6 +24,8 @@ import { formatCents, formatCpf, formatDate, formatDateTime } from '@/lib/format
 import { formatAnswer } from '@/pages/anamnesis/answers';
 import { PAYMENT_METHODS } from '@/pages/billing/status';
 import { STATUS_LABELS } from '@/pages/schedule/status';
+import { useBranding } from '@/theme/BrandingContext';
+import { createAppTheme } from '@/theme/createAppTheme';
 import { addressLines } from '../address';
 
 const CHARGE_STATUS: Record<ChargeStatus, string> = { pending: 'Pendente', paid: 'Paga', cancelled: 'Cancelada' };
@@ -65,118 +68,126 @@ function answerText(value: unknown, type: AnamnesisField['type'] | null): string
 export function PatientExportView({ data, onClose }: { data: PatientExport; onClose: () => void }) {
   const { patient } = data;
   const address = addressLines(patient.address);
+  // Sempre claro, mesmo no modo noturno: o relatório é para imprimir em papel branco.
+  const { branding } = useBranding();
+  const lightTheme = useMemo(
+    () => createAppTheme({ primaryColor: branding?.primaryColor, secondaryColor: branding?.secondaryColor }),
+    [branding?.primaryColor, branding?.secondaryColor],
+  );
 
   return (
-    <Dialog open fullScreen onClose={onClose}>
-      {printStyles}
-      <AppBar position="sticky" color="default" elevation={0} className="export-view-toolbar">
-        <Toolbar sx={{ gap: 1, borderBottom: 1, borderColor: 'divider' }}>
-          <Typography sx={{ flexGrow: 1, fontWeight: 600 }} noWrap>
-            Dados do paciente · formato legível
-          </Typography>
-          <Button variant="contained" startIcon={<PrintOutlined />} onClick={() => window.print()}>
-            Imprimir / salvar PDF
-          </Button>
-          <Button onClick={onClose}>Fechar</Button>
-        </Toolbar>
-      </AppBar>
-
-      <Box sx={{ p: { xs: 2, sm: 4 }, maxWidth: 900, mx: 'auto', width: '100%' }}>
-        <Stack spacing={4}>
-          <Box>
-            <Typography variant="h5" component="h1" sx={{ fontWeight: 700 }}>
-              {patient.fullName}
+    <ThemeProvider theme={lightTheme}>
+      <Dialog open fullScreen onClose={onClose}>
+        {printStyles}
+        <AppBar position="sticky" color="default" elevation={0} className="export-view-toolbar">
+          <Toolbar sx={{ gap: 1, borderBottom: 1, borderColor: 'divider' }}>
+            <Typography sx={{ flexGrow: 1, fontWeight: 600 }} noWrap>
+              Dados do paciente · formato legível
             </Typography>
-            <Typography color="text.secondary">
-              Dados mantidos por {data.clinic.name} · exportado em {formatDateTime(data.exportedAt)}
-            </Typography>
-            {patient.deletedAt && (
-              <Typography color="text.secondary">Cadastro removido em {formatDateTime(patient.deletedAt)}</Typography>
-            )}
-          </Box>
+            <Button variant="contained" startIcon={<PrintOutlined />} onClick={() => window.print()}>
+              Imprimir / salvar PDF
+            </Button>
+            <Button onClick={onClose}>Fechar</Button>
+          </Toolbar>
+        </AppBar>
 
-          <Section title="Cadastro">
-            <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' } }}>
-              <Field label="Nome completo">{patient.fullName}</Field>
-              <Field label="CPF">{formatCpf(patient.cpf)}</Field>
-              <Field label="Data de nascimento">{formatDate(patient.birthDate)}</Field>
-              <Field label="Telefone">{patient.phone}</Field>
-              <Field label="Email">{patient.email}</Field>
-              <Field label="Cadastrado em">{formatDateTime(patient.createdAt)}</Field>
+        <Box sx={{ p: { xs: 2, sm: 4 }, maxWidth: 900, mx: 'auto', width: '100%' }}>
+          <Stack spacing={4}>
+            <Box>
+              <Typography variant="h5" component="h1" sx={{ fontWeight: 700 }}>
+                {patient.fullName}
+              </Typography>
+              <Typography color="text.secondary">
+                Dados mantidos por {data.clinic.name} · exportado em {formatDateTime(data.exportedAt)}
+              </Typography>
+              {patient.deletedAt && (
+                <Typography color="text.secondary">Cadastro removido em {formatDateTime(patient.deletedAt)}</Typography>
+              )}
             </Box>
-            <Field label="Endereço">{address.length > 0 ? address.join(' · ') : null}</Field>
-            <Field label="Observações">{patient.notes}</Field>
-          </Section>
 
-          <Section title={`Fichas de anamnese (${data.clinicalRecords.length})`}>
-            {data.clinicalRecords.length === 0 && <Empty />}
-            {data.clinicalRecords.map((record) => (
-              <Box key={record.id} sx={{ breakInside: 'avoid' }}>
-                <Typography sx={{ fontWeight: 600 }}>{record.form.name}</Typography>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  {formatDateTime(record.createdAt)}
-                  {record.filledBy && ` · preenchida por ${record.filledBy.name}`}
-                </Typography>
-                <Stack spacing={1} sx={{ pl: 1.5, borderLeft: 2, borderColor: 'divider' }}>
-                  {record.answers.map((answer) => (
-                    <Field key={answer.key} label={answer.label ?? `${answer.key} (campo retirado do formulário)`}>
-                      {answerText(answer.value, answer.type)}
-                    </Field>
-                  ))}
-                </Stack>
+            <Section title="Cadastro">
+              <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' } }}>
+                <Field label="Nome completo">{patient.fullName}</Field>
+                <Field label="CPF">{formatCpf(patient.cpf)}</Field>
+                <Field label="Data de nascimento">{formatDate(patient.birthDate)}</Field>
+                <Field label="Telefone">{patient.phone}</Field>
+                <Field label="Email">{patient.email}</Field>
+                <Field label="Cadastrado em">{formatDateTime(patient.createdAt)}</Field>
               </Box>
-            ))}
-          </Section>
+              <Field label="Endereço">{address.length > 0 ? address.join(' · ') : null}</Field>
+              <Field label="Observações">{patient.notes}</Field>
+            </Section>
 
-          <Section title={`Agendamentos (${data.appointments.length})`}>
-            {data.appointments.length === 0 ? (
-              <Empty />
-            ) : (
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Data</TableCell>
-                    <TableCell>Profissional</TableCell>
-                    <TableCell>Situação</TableCell>
-                    <TableCell>Observações</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {data.appointments.map((appointment) => (
-                    <TableRow key={appointment.id}>
-                      <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatDateTime(appointment.scheduledAt)}</TableCell>
-                      <TableCell>{appointment.professional.name}</TableCell>
-                      <TableCell>{STATUS_LABELS[appointment.status] ?? appointment.status}</TableCell>
-                      <TableCell>{appointment.notes || '—'}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </Section>
-
-          <Section title={`Cobranças (${data.charges.length})`}>
-            {data.charges.length === 0 && <Empty />}
-            {data.charges.map((charge) => (
-              <Box key={charge.id} sx={{ breakInside: 'avoid' }}>
-                <Typography sx={{ fontWeight: 600 }}>
-                  {charge.description} · {formatCents(charge.amountCents)}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Vencimento {formatDate(charge.dueDate)} · {CHARGE_STATUS[charge.status] ?? charge.status}
-                </Typography>
-                {charge.payments.map((payment) => (
-                  <Typography key={payment.id} variant="body2" sx={{ pl: 1.5 }}>
-                    Pagamento de {formatCents(payment.amountCents)} em {formatDate(payment.paidAt)} (
-                    {PAYMENT_METHODS[payment.method] ?? payment.method}){payment.notes && ` · ${payment.notes}`}
+            <Section title={`Fichas de anamnese (${data.clinicalRecords.length})`}>
+              {data.clinicalRecords.length === 0 && <Empty />}
+              {data.clinicalRecords.map((record) => (
+                <Box key={record.id} sx={{ breakInside: 'avoid' }}>
+                  <Typography sx={{ fontWeight: 600 }}>{record.form.name}</Typography>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    {formatDateTime(record.createdAt)}
+                    {record.filledBy && ` · preenchida por ${record.filledBy.name}`}
                   </Typography>
-                ))}
-              </Box>
-            ))}
-          </Section>
-        </Stack>
-      </Box>
-    </Dialog>
+                  <Stack spacing={1} sx={{ pl: 1.5, borderLeft: 2, borderColor: 'divider' }}>
+                    {record.answers.map((answer) => (
+                      <Field key={answer.key} label={answer.label ?? `${answer.key} (campo retirado do formulário)`}>
+                        {answerText(answer.value, answer.type)}
+                      </Field>
+                    ))}
+                  </Stack>
+                </Box>
+              ))}
+            </Section>
+
+            <Section title={`Agendamentos (${data.appointments.length})`}>
+              {data.appointments.length === 0 ? (
+                <Empty />
+              ) : (
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Data</TableCell>
+                      <TableCell>Profissional</TableCell>
+                      <TableCell>Situação</TableCell>
+                      <TableCell>Observações</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {data.appointments.map((appointment) => (
+                      <TableRow key={appointment.id}>
+                        <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatDateTime(appointment.scheduledAt)}</TableCell>
+                        <TableCell>{appointment.professional.name}</TableCell>
+                        <TableCell>{STATUS_LABELS[appointment.status] ?? appointment.status}</TableCell>
+                        <TableCell>{appointment.notes || '—'}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </Section>
+
+            <Section title={`Cobranças (${data.charges.length})`}>
+              {data.charges.length === 0 && <Empty />}
+              {data.charges.map((charge) => (
+                <Box key={charge.id} sx={{ breakInside: 'avoid' }}>
+                  <Typography sx={{ fontWeight: 600 }}>
+                    {charge.description} · {formatCents(charge.amountCents)}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Vencimento {formatDate(charge.dueDate)} · {CHARGE_STATUS[charge.status] ?? charge.status}
+                  </Typography>
+                  {charge.payments.map((payment) => (
+                    <Typography key={payment.id} variant="body2" sx={{ pl: 1.5 }}>
+                      Pagamento de {formatCents(payment.amountCents)} em {formatDate(payment.paidAt)} (
+                      {PAYMENT_METHODS[payment.method] ?? payment.method}){payment.notes && ` · ${payment.notes}`}
+                    </Typography>
+                  ))}
+                </Box>
+              ))}
+            </Section>
+          </Stack>
+        </Box>
+      </Dialog>
+    </ThemeProvider>
   );
 }
 

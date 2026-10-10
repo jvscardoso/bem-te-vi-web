@@ -14,7 +14,7 @@ src/
   auth/               Sessão (token), AuthProvider (/auth/me), guards e helpers de permissão
   theme/              Marca da clínica: host, BrandingProvider, tema MUI, cache da marca
   legal/              Textos dos Termos de Uso e da Política de Privacidade, por versão
-  layouts/            ShellLayout (menu lateral + topo), PublicCardLayout (telas públicas), navigation.tsx
+  layouts/            ShellLayout (menu lateral + topo), PublicCardLayout (telas públicas), navigation.tsx (itens com `shortLabel` quando o nome não cabe no menu recolhido, ~12 caracteres)
   components/         Componentes reutilizáveis (diálogos, campos, estados vazios, notificações)
   lib/                Funções puras e hooks utilitários (datas, formatos, máscaras, formulários, erros)
   pages/              Telas, uma pasta por área (patients, schedule, billing, settings, users, roles…)
@@ -67,6 +67,10 @@ Definido em `src/router.tsx` com `createBrowserRouter`.
   - produção: `window.location.host`;
   - dev: `?tenant=<subdomínio>` (lembrado na aba em `sessionStorage` `btv.devTenant`; `?tenant=` vazio esquece), senão `VITE_DEV_TENANT`, senão o host.
 - `BrandingProvider` busca `GET /public/branding?host=` (chave `['public-branding', host]`, `staleTime` 5 min, sem retry em 404), monta o tema MUI com `createAppTheme(cores)`, aplica `CssBaseline` e põe `tradeName ?? name` no `document.title`. `useBranding()` dá `status` (`loading`/`found`/`notFound`/`error`), `displayName` e `logoUrl`. Sem clínica, vale a marca padrão do bem-te-vi.
+- **Modo claro/escuro** (`src/theme/colorMode.ts`): `useColorModeState` lê `localStorage` `btv.colorMode` antes do primeiro render (sem piscar) e, sem escolha salva, acompanha `prefers-color-scheme`. O `BrandingProvider` passa o modo para `createAppTheme` e expõe `useColorMode()` (`mode`, `setMode`). Não usamos as variáveis CSS do MUI (`colorSchemes`) porque a pré-visualização de marca usa um `ThemeProvider` aninhado.
+  - No escuro, `createAppTheme` clareia as cores da clínica até um contraste mínimo com o fundo (`readableOnDark`).
+  - `contrastThreshold: 4.5`: o texto sobre a cor da clínica (preto ou branco) segue o critério AA nos dois modos.
+  - Nada de cor fixa clara/escura nos componentes: use `background.*`, `text.*`, `divider`, `action.*` e as cores da paleta. O `CssBaseline enableColorScheme` deixa campos nativos (data, hora) no modo certo.
 - **O mesmo host vai no login e no "esqueci minha senha"**: assim a tela nunca mostra uma clínica enquanto a API valida outra.
 - Depois de salvar marca ou logo, `applyBrandingToCache` atualiza o cache local da marca pública, porque a resposta HTTP da API tem `Cache-Control: max-age=60`.
 

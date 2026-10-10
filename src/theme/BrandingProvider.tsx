@@ -5,6 +5,7 @@ import { publicApi } from '@/api/auth';
 import { isApiError } from '@/lib/errors';
 import { BrandingContext, type BrandingContextValue } from './BrandingContext';
 import { getBrandingHost } from './brandingHost';
+import { ColorModeContext, useColorModeState } from './colorMode';
 import { createAppTheme } from './createAppTheme';
 
 const PRODUCT_NAME = 'bem-te-vi';
@@ -37,9 +38,15 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
     };
   }, [branding, query.error]);
 
+  const colorMode = useColorModeState();
   const theme = useMemo(
-    () => createAppTheme({ primaryColor: branding?.primaryColor, secondaryColor: branding?.secondaryColor }),
-    [branding?.primaryColor, branding?.secondaryColor],
+    () =>
+      createAppTheme({
+        primaryColor: branding?.primaryColor,
+        secondaryColor: branding?.secondaryColor,
+        mode: colorMode.mode,
+      }),
+    [branding?.primaryColor, branding?.secondaryColor, colorMode.mode],
   );
 
   useEffect(() => {
@@ -48,10 +55,13 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
 
   return (
     <BrandingContext.Provider value={value}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        {children}
-      </ThemeProvider>
+      <ColorModeContext.Provider value={colorMode}>
+        <ThemeProvider theme={theme}>
+          {/* enableColorScheme: campos nativos (data, hora, rolagem) acompanham o modo escuro. */}
+          <CssBaseline enableColorScheme />
+          {children}
+        </ThemeProvider>
+      </ColorModeContext.Provider>
     </BrandingContext.Provider>
   );
 }

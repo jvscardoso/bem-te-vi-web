@@ -1,4 +1,4 @@
-Atualizado em 09/10/2026.
+Atualizado em 10/10/2026.
 
 # Status do front (bem-te-vi-web)
 
@@ -49,6 +49,8 @@ Retrato do que existe no código. Leia antes de começar uma tarefa. Regras de n
 
 ### Transversal
 
+- **Modo noturno:** chave "Modo noturno" no menu do usuário (canto superior direito, junto de Minha conta e Sair). A escolha fica salva no navegador (`localStorage` `btv.colorMode`); sem escolha, segue o tema do sistema. Vale também nas telas públicas. A versão legível da exportação de paciente fica sempre clara, para imprimir.
+- **Menu lateral recolhível (desktop):** um chip redondo na borda do menu, na altura da logo, recolhe e expande o menu. Recolhido, cada item mostra o ícone com o rótulo embaixo (rótulo curto `shortLabel` em `navigation.tsx` quando o nome não cabe: "Anamnese", "Papéis", com o nome completo no tooltip), e os títulos de seção viram divisórias. A escolha fica salva no navegador (`localStorage` `btv.sidebarCollapsed`). No celular o menu continua temporário e sempre completo.
 - **Aviso de encerramento da conta:** com pedido ativo, um banner em todas as telas da clínica para quem tem `tenant:manage`, com "Exportar dados" e "Cancelar encerramento". Os demais usuários não veem (a API só informa o pedido a quem tem `tenant:manage`).
 - **Aceite pendente de Termos/Política (LGPD):** com `pendingLegalDocuments` não vazio em `/auth/me`, o `RequireAuth` mostra um modal que não fecha (`PendingLegalScreen`) no lugar do app, tanto da clínica quanto da plataforma. "Aceitar e continuar" envia as duas versões vigentes a `POST /auth/me/legal-acceptances`; "Sair" desloga. Textos diferentes para os dois documentos pendentes e para versão nova de um só.
 - Whitelabel por endereço (subdomínio / domínio próprio; `?tenant=` em dev), tema MUI montado a partir das cores da clínica.

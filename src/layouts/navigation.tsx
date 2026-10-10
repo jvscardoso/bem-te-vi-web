@@ -13,6 +13,8 @@ import type { PermissionRequirement } from '@/auth/permissions';
 
 export interface NavItem {
   label: string;
+  /** Rótulo do menu recolhido, quando o completo não cabe embaixo do ícone. */
+  shortLabel?: string;
   path: string;
   icon: ReactNode;
   permission?: PermissionRequirement;
@@ -37,12 +39,19 @@ export const clinicNavigation: NavSection[] = [
     items: [
       {
         label: 'Formulários de anamnese',
+        shortLabel: 'Anamnese',
         path: '/anamnese/formularios',
         icon: <AssignmentOutlined />,
         permission: 'anamnesis_templates:manage',
       },
       { label: 'Usuários', path: '/usuarios', icon: <ManageAccountsOutlined />, permission: 'users:manage' },
-      { label: 'Papéis e permissões', path: '/papeis', icon: <AdminPanelSettingsOutlined />, permission: 'roles:manage' },
+      {
+        label: 'Papéis e permissões',
+        shortLabel: 'Papéis',
+        path: '/papeis',
+        icon: <AdminPanelSettingsOutlined />,
+        permission: 'roles:manage',
+      },
       { label: 'Configurações', path: '/configuracoes', icon: <SettingsOutlined />, permission: 'tenant:manage' },
       { label: 'Auditoria', path: '/auditoria', icon: <PolicyOutlined />, permission: 'audit:read' },
     ],
