@@ -13,6 +13,32 @@ const SURFACES = {
   dark: { default: '#0F1214', paper: '#171B1F', border: '#2A3036' },
 } as const;
 
+// Cor fixa extra para status (ex.: agendamento confirmado). Status não usam `primary`: com a cor
+// da clínica, eles mudariam de marca para marca e poderiam coincidir com `info` (azul).
+const PURPLE = {
+  light: { main: '#7B1FA2', light: '#AE52D4', dark: '#4A0072', contrastText: '#FFFFFF' },
+  dark: { main: '#CE93D8', light: '#F3E5F5', dark: '#AB47BC', contrastText: 'rgba(0, 0, 0, 0.87)' },
+} as const;
+
+declare module '@mui/material/styles' {
+  interface Palette {
+    purple: Palette['primary'];
+  }
+  interface PaletteOptions {
+    purple?: PaletteOptions['primary'];
+  }
+}
+declare module '@mui/material/Chip' {
+  interface ChipPropsColorOverrides {
+    purple: true;
+  }
+}
+declare module '@mui/material/Button' {
+  interface ButtonPropsColorOverrides {
+    purple: true;
+  }
+}
+
 /** Cor da marca como a clínica definiu (sem o ajuste do modo escuro), ou o padrão do bem-te-vi. */
 export function validColor(value: string | null | undefined, fallback: string) {
   return value && HEX_COLOR.test(value) ? value : fallback;
@@ -51,6 +77,7 @@ export function createAppTheme({ primaryColor, secondaryColor, mode = 'light' }:
         contrastThreshold: 4.5,
         primary: { main: dark ? readableOnDark(primary, 6) : primary },
         secondary: { main: dark ? readableOnDark(secondary, 3) : secondary },
+        purple: PURPLE[mode],
         background: { default: surface.default, paper: surface.paper },
         divider: surface.border,
       },

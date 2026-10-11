@@ -8,14 +8,15 @@ export const STATUS_LABELS: Record<AppointmentStatus, string> = {
   no_show: 'Faltou',
 };
 
-export const STATUS_COLORS: Record<AppointmentStatus, 'default' | 'info' | 'primary' | 'success' | 'warning' | 'error'> =
-  {
-    scheduled: 'info',
-    confirmed: 'primary',
-    completed: 'success',
-    cancelled: 'default',
-    no_show: 'warning',
-  };
+// Cores fixas, nunca `primary`: com a cor da clínica, um status poderia ficar igual a outro
+// (ex.: marca azul deixava Agendado e Confirmado iguais).
+export const STATUS_COLORS: Record<AppointmentStatus, 'default' | 'info' | 'purple' | 'success' | 'warning'> = {
+  scheduled: 'info',
+  confirmed: 'purple',
+  completed: 'success',
+  cancelled: 'default',
+  no_show: 'warning',
+};
 
 /** Transições aceitas pela API (seção 10.3). */
 export const STATUS_TRANSITIONS: Record<AppointmentStatus, AppointmentStatus[]> = {

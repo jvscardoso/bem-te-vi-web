@@ -71,6 +71,7 @@ Definido em `src/router.tsx` com `createBrowserRouter`.
   - No escuro, `createAppTheme` clareia as cores da clínica até um contraste mínimo com o fundo (`readableOnDark`).
   - `contrastThreshold: 4.5`: o texto sobre a cor da clínica (preto ou branco) segue o critério AA nos dois modos.
   - Nada de cor fixa clara/escura nos componentes: use `background.*`, `text.*`, `divider`, `action.*` e as cores da paleta. O `CssBaseline enableColorScheme` deixa campos nativos (data, hora) no modo certo.
+  - **Status nunca usam `primary`** (a cor da clínica muda de marca para marca e pode coincidir com outra cor de status). Use as cores semânticas (`info`, `success`, `warning`, `error`, `default`) e, quando faltar uma, `purple` (cor extra da paleta, com tom próprio para cada modo, declarada em `createAppTheme.ts`).
 - **O mesmo host vai no login e no "esqueci minha senha"**: assim a tela nunca mostra uma clínica enquanto a API valida outra.
 - Depois de salvar marca ou logo, `applyBrandingToCache` atualiza o cache local da marca pública, porque a resposta HTTP da API tem `Cache-Control: max-age=60`.
 

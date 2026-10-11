@@ -389,7 +389,8 @@ export function AppointmentDialog({ appointment, draft, onClose }: AppointmentDi
                 key={status}
                 size="small"
                 variant="outlined"
-                color={status === 'cancelled' ? 'error' : status === 'no_show' ? 'warning' : 'primary'}
+                // A cor do status de destino; cancelar é destrutivo e fica em vermelho.
+                color={status === 'cancelled' ? 'error' : STATUS_COLORS[status] === 'default' ? 'inherit' : STATUS_COLORS[status]}
                 disabled={busy}
                 onClick={() => (status === 'confirmed' ? changeStatus.mutate(status) : setPendingStatus(status))}
               >
