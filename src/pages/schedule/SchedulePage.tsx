@@ -30,6 +30,8 @@ import { useAuth, useTenantId } from '@/auth/AuthContext';
 import { ErrorMessages } from '@/components/ErrorMessages';
 import {
   addDays,
+  addMonths,
+  DAY,
   formatDayMonth,
   formatLongDate,
   formatMonthYear,
@@ -37,15 +39,17 @@ import {
   fromDateKey,
   isSameDay,
   startOfDay,
+  startOfMonth,
   startOfWeek,
   toDateKey,
 } from '@/lib/dates';
 import { AgendaList } from './AgendaList';
 import { AppointmentDialog, type AppointmentDraft } from './AppointmentDialog';
+import { MonthGrid } from './MonthGrid';
 import { ACTIVE_STATUSES, ALL_STATUSES, professionalColor } from './status';
 import { TimeGrid, type GridColumn } from './TimeGrid';
 
-type View = 'dia' | 'semana';
+type View = 'dia' | 'semana' | 'mes';
 
 const DEFAULT_START_HOUR = 7;
 const DEFAULT_END_HOUR = 20;
@@ -60,28 +64,38 @@ export function SchedulePage() {
   const [params, setParams] = useSearchParams();
   const [dialog, setDialog] = useState<DialogState>(null);
 
-  // Estado na URL: ?data=2026-10-01&visao=dia&profissional=<id>&todos=1
+  // Estado na URL: ?data=2026-10-01&visao=dia|mes&profissional=<id>&todos=1 (sem visao = semana)
   const date = fromDateKey(params.get('data')) ?? startOfDay(new Date());
-  const view: View = params.get('visao') === 'dia' ? 'dia' : 'semana';
+  const visao = params.get('visao');
+  const view: View = visao === 'dia' || visao === 'mes' ? visao : 'semana';
   // Sem appointments:all, só a própria agenda: o filtro é sempre o próprio usuário (um
   // ?profissional= de outra pessoa, vindo de link antigo, daria 403 e é ignorado).
   const seesAllAgendas = can('appointments:all');
   const professionalId = seesAllAgendas ? (params.get('profissional') ?? '') : (user?.userId ?? '');
   const showInactive = params.get('todos') === '1';
 
-  const updateParams = (changes: Record<string, string | null>) =>
+  // Navegar e filtrar substituem a entrada do histórico; `push` cria uma nova (abrir um dia a partir
+  // do mês), para o Voltar trazer de volta ao mês.
+  const updateParams = (changes: Record<string, string | null>, { push = false } = {}) =>
     setParams(
       (previous) => {
         const next = new URLSearchParams(previous);
         Object.entries(changes).forEach(([key, value]) => (value ? next.set(key, value) : next.delete(key)));
         return next;
       },
-      { replace: true },
+      { replace: !push },
     );
 
-  const rangeStart = view === 'dia' ? startOfDay(date) : startOfWeek(date);
-  const days = view === 'dia' ? 1 : 7;
-  const rangeEnd = addDays(rangeStart, days);
+  // Mês: semanas completas (segunda a domingo) que cobrem o mês; os dias vizinhos aparecem esmaecidos.
+  const monthStart = startOfMonth(date);
+  const rangeStart = view === 'dia' ? startOfDay(date) : startOfWeek(view === 'mes' ? monthStart : date);
+  const rangeEnd =
+    view === 'dia'
+      ? addDays(rangeStart, 1)
+      : view === 'semana'
+        ? addDays(rangeStart, 7)
+        : addDays(startOfWeek(addDays(addMonths(monthStart, 1), -1)), 7);
+  const days = Math.round((rangeEnd.getTime() - rangeStart.getTime()) / DAY);
 
   const listParams = {
     professionalId: professionalId || undefined,
@@ -167,7 +181,7 @@ export function SchedulePage() {
       };
     });
   };
-  const columns = buildColumns();
+  const columns = view === 'mes' ? [] : buildColumns();
 
   // Faixa de horas: padrão 7h–20h, ampliada para caber todos os agendamentos.
   const hourRange = (): [number, number] => {
@@ -187,9 +201,28 @@ export function SchedulePage() {
   const title =
     view === 'dia'
       ? formatLongDate(rangeStart)
-      : `${formatDayMonth(rangeStart)} a ${formatDayMonth(addDays(rangeEnd, -1))} · ${formatMonthYear(rangeStart)}`;
+      : view === 'mes'
+        ? formatMonthYear(monthStart)
+        : `${formatDayMonth(rangeStart)} a ${formatDayMonth(addDays(rangeEnd, -1))} · ${formatMonthYear(rangeStart)}`;
 
-  const step = (direction: -1 | 1) => updateParams({ data: toDateKey(addDays(date, direction * days)) });
+  const step = (direction: -1 | 1) =>
+    updateParams({
+      data: toDateKey(view === 'mes' ? addMonths(date, direction) : addDays(date, direction * days)),
+    });
+  const stepLabels = {
+    dia: ['Dia anterior', 'Próximo dia'],
+    semana: ['Semana anterior', 'Próxima semana'],
+    mes: ['Mês anterior', 'Próximo mês'],
+  }[view];
+
+  const openDay = (day: Date) => updateParams({ visao: 'dia', data: toDateKey(day) }, { push: true });
+  const draftAt = (day: Date) =>
+    setDialog({
+      draft: {
+        start: new Date(day.getFullYear(), day.getMonth(), day.getDate(), 9),
+        professionalId: professionalId || undefined,
+      },
+    });
 
   const newAppointment = () => {
     const start = new Date();
@@ -210,13 +243,13 @@ export function SchedulePage() {
             <Button variant="outlined" size="small" onClick={() => updateParams({ data: null })}>
               Hoje
             </Button>
-            <Tooltip title={view === 'dia' ? 'Dia anterior' : 'Semana anterior'}>
-              <IconButton aria-label="Anterior" onClick={() => step(-1)}>
+            <Tooltip title={stepLabels[0]}>
+              <IconButton aria-label={stepLabels[0]} onClick={() => step(-1)}>
                 <ChevronLeft />
               </IconButton>
             </Tooltip>
-            <Tooltip title={view === 'dia' ? 'Próximo dia' : 'Próxima semana'}>
-              <IconButton aria-label="Próximo" onClick={() => step(1)}>
+            <Tooltip title={stepLabels[1]}>
+              <IconButton aria-label={stepLabels[1]} onClick={() => step(1)}>
                 <ChevronRight />
               </IconButton>
             </Tooltip>
@@ -240,6 +273,7 @@ export function SchedulePage() {
           >
             <ToggleButton value="dia">Dia</ToggleButton>
             <ToggleButton value="semana">Semana</ToggleButton>
+            <ToggleButton value="mes">Mês</ToggleButton>
           </ToggleButtonGroup>
           {seesAllAgendas ? (
             <TextField
@@ -282,12 +316,24 @@ export function SchedulePage() {
             <ErrorMessages error={appointments.error} />
           </Box>
         ) : isMobile ? (
+          // No celular, o mês vira a lista dos seus dias (sem os vizinhos da grade).
           <AgendaList
-            from={rangeStart}
-            days={days}
+            from={view === 'mes' ? monthStart : rangeStart}
+            days={view === 'mes' ? new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate() : days}
             appointments={items}
             colorFor={colorFor}
             showProfessional={showProfessional}
+            onAppointmentClick={(appointment) => setDialog({ appointment })}
+          />
+        ) : view === 'mes' ? (
+          <MonthGrid
+            days={Array.from({ length: days }, (_, index) => addDays(rangeStart, index))}
+            month={monthStart}
+            appointments={items}
+            colorFor={colorFor}
+            showProfessional={showProfessional}
+            onDayClick={openDay}
+            onEmptyClick={canWrite ? draftAt : undefined}
             onAppointmentClick={(appointment) => setDialog({ appointment })}
           />
         ) : (
