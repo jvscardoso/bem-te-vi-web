@@ -12,7 +12,7 @@ Retrato do que existe no código. Leia antes de começar uma tarefa. Regras de n
 
 | Tela | Rota | O que faz |
 |---|---|---|
-| Login | `/login` | Marca da clínica do endereço; envia `host` junto (só usuários daquela clínica entram). Recebe `email` e aviso por `location.state` (vindo de reset, convite ou "esqueci"). Link "Esqueci minha senha" leva o email digitado. |
+| Login | `/login` | Tela dividida (`AuthSplitLayout`): à esquerda um painel na cor original da marca (também no modo escuro), com o logo sobre um quadro branco (ou a inicial, se não houver logo ou ele não carregar) e o nome; à direita o formulário. No celular o painel some e a marca fica acima do formulário. Marca da clínica do endereço; envia `host` junto (só usuários daquela clínica entram). Recebe `email` e aviso por `location.state` (vindo de reset, convite ou "esqueci"). Link "Esqueci minha senha" leva o email digitado. |
 | Esqueci minha senha | `/esqueci-minha-senha` | `POST /auth/forgot-password` com `host`; sempre a mesma mensagem de sucesso. |
 | Redefinir senha | `/reset-password?token=` | Lê o token uma vez e o remove da URL (`history.replaceState`). Em `200`, limpa a sessão local e vai ao login com o email e o aviso. "Link inválido" oferece pedir outro link. |
 | Aceitar convite | `/accept-invite?token=` | Mesmo componente da redefinição (`TokenPasswordPage`), com o checkbox de Termos e Política (no `400` de versão desatualizada, recarrega as versões e desmarca o aceite). |

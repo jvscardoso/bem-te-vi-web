@@ -13,7 +13,8 @@ const SURFACES = {
   dark: { default: '#0F1214', paper: '#171B1F', border: '#2A3036' },
 } as const;
 
-function validColor(value: string | null | undefined, fallback: string) {
+/** Cor da marca como a clínica definiu (sem o ajuste do modo escuro), ou o padrão do bem-te-vi. */
+export function validColor(value: string | null | undefined, fallback: string) {
   return value && HEX_COLOR.test(value) ? value : fallback;
 }
 

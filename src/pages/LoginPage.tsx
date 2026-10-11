@@ -4,12 +4,10 @@ import { Link as RouterLink, useLocation, useNavigate, type Location } from 'rea
 import { Alert, Box, Button, Link, Stack, TextField, Typography } from '@mui/material';
 import { useAuth } from '@/auth/AuthContext';
 import { session } from '@/auth/session';
-import { BrandMark } from '@/components/BrandMark';
 import { ErrorMessages } from '@/components/ErrorMessages';
 import { PasswordField } from '@/components/PasswordField';
-import { PublicCardLayout } from '@/layouts/PublicCardLayout';
+import { AuthSplitLayout } from '@/layouts/AuthSplitLayout';
 import { muiField } from '@/lib/form';
-import { useBranding } from '@/theme/BrandingContext';
 import type { LoginNotice } from './auth/TokenPasswordPage';
 
 interface FormValues {
@@ -49,12 +47,16 @@ export function LoginPage() {
   });
 
   return (
-    <PublicCardLayout>
+    <AuthSplitLayout>
       <Stack spacing={3} component="form" onSubmit={onSubmit} noValidate>
-        <Stack spacing={2} sx={{ alignItems: 'center' }}>
-          <BrandMark size={56} hideName />
-          <BrandTitle />
-        </Stack>
+        <Box>
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
+            Entrar
+          </Typography>
+          <Typography color="text.secondary" sx={{ mt: 0.5 }}>
+            Use o email e a senha da sua conta.
+          </Typography>
+        </Box>
 
         {arrival.notice && !submitError && <Alert severity="success">{arrival.notice}</Alert>}
         {logoutReason === 'expired' && !submitError && !arrival.notice && (
@@ -90,18 +92,6 @@ export function LoginPage() {
           </Link>
         </Typography>
       </Stack>
-    </PublicCardLayout>
-  );
-}
-
-function BrandTitle() {
-  const { status, displayName } = useBranding();
-  return (
-    <Box sx={{ textAlign: 'center' }}>
-      <Typography variant="h5" component="h1" sx={{ fontWeight: 700 }}>
-        {displayName}
-      </Typography>
-      <Typography color="text.secondary">{status === 'found' ? 'Acesse sua conta' : 'Gestão de clínicas'}</Typography>
-    </Box>
+    </AuthSplitLayout>
   );
 }
