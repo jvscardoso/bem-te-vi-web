@@ -8,10 +8,9 @@ Frontend React do bem-te-vi (SaaS whitelabel de gestão de clínicas). API em `.
 2. Conforme a tarefa:
    - `docs/regras-de-negocio.md`: regras e contrato da API. Vale o código da API se divergir.
    - `docs/arquitetura.md`: como o front é organizado e os padrões.
-   - `docs/changes/` (só existe quando há tasks abertas): tasks vindas da API, com o índice `00-indice.md` e a situação de cada uma no front.
-   - `docs/proposta-*.md`: propostas do front para a sessão da API, ainda em aberto.
+   - `docs/changes/` (só existe quando há tasks abertas): tasks nos dois sentidos, com o índice `00-indice.md` (origem, situação na API e no front). Vêm da API para o front implementar ou saem do front como pedido para a API desenvolver (numeradas em sequência, no formato de card: contexto, o que muda, critérios de aceite e o que o front faz depois).
    - `docs/credenciais-de-teste.md`: contas locais para testar no navegador.
-3. A documentação é versionada, exceto `docs/credenciais-de-teste.md` (senhas de teste, no `.gitignore`). Nunca coloque senhas ou tokens em outro documento.
+3. A documentação é versionada, exceto `docs/credenciais-de-teste.md` (senhas de teste) e `docs/changes/` (tasks que só servem para levar à sessão da API), os dois no `.gitignore`. Nunca coloque senhas ou tokens em outro documento.
 
 ## Comandos
 
@@ -37,7 +36,7 @@ API local (na pasta da API): `docker compose --profile app up -d --build`. Sobe 
 
 ## Regras que não podem quebrar
 
-- **Não altere o contrato da API.** Se algo bloquear, escreva uma proposta em `docs/` (ex.: `docs/proposta-<assunto>.md`) para a sessão da API e avise o usuário. Não contorne com hacks.
+- **Não altere o contrato da API.** Se algo bloquear, escreva uma task em `docs/changes/` (próximo número, registrada no `00-indice.md` com origem "Front") para a sessão da API e avise o usuário. Não contorne com hacks.
 - **401 desloga e 400 não.** Só o `client.ts` limpa a sessão, e só se o token recusado for o atual. Erros de formulário e de fluxo de senha são 400 e nunca deslogam.
 - **Telas e ações são controladas pelas permissões de `/auth/me`** (`can(...)`, `RequirePermission`, `permission` no menu). Nunca use o nome do papel nem as permissões da resposta do login. `appointments:all` define se o usuário vê todas as agendas ou só a própria.
 - **`/reset-password` e `/accept-invite` são fixas**: os emails da API apontam para elas. Não renomeie nem mova essas rotas.

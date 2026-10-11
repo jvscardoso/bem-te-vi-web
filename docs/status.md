@@ -65,7 +65,7 @@ Retrato do que existe no código. Leia antes de começar uma tarefa. Regras de n
 
 Todas as 11 tasks recebidas foram concluídas e conferidas no código em 09/10/2026. Os arquivos saíram de `docs/changes/` do front nessa data; os originais continuam na pasta da API (`../bem-te-vi-api/docs/changes/`). Tasks novas voltam a entrar em `docs/changes/`, com um `00-indice.md`.
 
-**Aberta:** task 12, busca de pacientes também pelo telefone (pedido do front para a API). Ver [`changes/00-indice.md`](changes/00-indice.md).
+**Abertas:** tasks 12 a 17, todas pedidos do front para a API (as propostas que antes ficavam em `docs/proposta-*.md` viraram as tasks 14 a 17 em 10/10/2026). Situação de cada uma em [`changes/00-indice.md`](changes/00-indice.md).
 
 | # | Task | Situação | Onde está no código |
 |---|---|---|---|
@@ -83,17 +83,17 @@ Todas as 11 tasks recebidas foram concluídas e conferidas no código em 09/10/2
 
 ## O que falta
 
-1. **LGPD:** todas as tasks entregues (08 a 11). Pendências: textos oficiais (abaixo) e as duas propostas à API de LGPD.
+1. **LGPD:** todas as tasks entregues (08 a 11). Pendências: textos oficiais (abaixo) e as tasks 16 e 17 para a API.
 2. Textos oficiais dos Termos de Uso e da Política de Privacidade (cadastrar por versão em `src/legal/documents.ts`, TODO no arquivo). Ao trocar um texto, a API precisa subir `LEGAL_TERMS_VERSION` / `LEGAL_PRIVACY_VERSION`.
 3. Landing page do produto: **fora deste repositório** (decidido em 10/10/2026). Ela faz o cadastro de clínicas; o contrato e as regras estão em [`cadastro-de-clinica-na-landing.md`](cadastro-de-clinica-na-landing.md).
 4. Testes automatizados (nenhum existe).
 5. Build/deploy de produção: não há configuração de hospedagem nem de fallback de SPA (ver [`arquitetura.md`](arquitetura.md#build-e-deploy)).
-6. **Busca por telefone:** task 12 aguardando a API (o front só precisa trocar os textos de ajuda depois).
+6. **Tasks para a API (12 a 17):** busca por telefone (12), quem atende pacientes (13), validação do cadastro de clínica (14), links de email com subdomínio em dev (15), nome do paciente na auditoria (16) e encerramentos no painel da plataforma (17). Situação e o que o front faz depois de cada uma no [`changes/00-indice.md`](changes/00-indice.md).
 
 ## Limitações e bugs conhecidos
 
-- **Nome do paciente na auditoria:** a API devolve só `patientId`, e buscar o nome geraria um `patient.view` por linha. A tela mostra "Abrir ficha" (ou o nome, quando filtrada por paciente). Proposta para a API em [`proposta-nome-do-paciente-na-auditoria.md`](proposta-nome-do-paciente-na-auditoria.md).
-- **Painel da plataforma sem filtro de encerramento:** a lista não filtra nem ordena por pedido e não traz a data de liberação. O botão "Excluir definitivamente" aparece para toda clínica com pedido, e a carência é conferida pela API (`409` com a data). Proposta em [`proposta-encerramentos-no-painel-da-plataforma.md`](proposta-encerramentos-no-painel-da-plataforma.md).
+- **Nome do paciente na auditoria:** a API devolve só `patientId`, e buscar o nome geraria um `patient.view` por linha. A tela mostra "Abrir ficha" (ou o nome, quando filtrada por paciente). Task 16 para a API em [`changes/16-nome-do-paciente-na-auditoria.md`](changes/16-nome-do-paciente-na-auditoria.md).
+- **Painel da plataforma sem filtro de encerramento:** a lista não filtra nem ordena por pedido e não traz a data de liberação. O botão "Excluir definitivamente" aparece para toda clínica com pedido, e a carência é conferida pela API (`409` com a data). Task 17 em [`changes/17-encerramentos-no-painel-da-plataforma.md`](changes/17-encerramentos-no-painel-da-plataforma.md).
 - **Usuários da plataforma também passam pelo aceite de Termos/Política**, porque a API informa a pendência para eles. Ver decisões em aberto.
 - **Nome do arquivo de exportação** é montado pelo front (`paciente-<id>.json`): a API não expõe `Content-Disposition` no CORS (`app.enableCors()` sem `exposedHeaders`). Se um dia a API quiser definir o nome, precisa expor o header.
 - **Impressão do formato legível** não foi testada pela automação (abre a janela de impressão do sistema). As regras de `@media print` em `PatientExportView` escondem o app e soltam o diálogo para imprimir todas as páginas; vale conferir manualmente.
@@ -113,10 +113,6 @@ Todas as 11 tasks recebidas foram concluídas e conferidas no código em 09/10/2
 
 - Banner de encerramento de conta para usuários sem `tenant:manage`: aviso simples ou nada (task 11).
 - Textos legais oficiais (dependem de orientação jurídica).
-- Proposta à API: nome do paciente nos registros da auditoria.
-- Proposta à API: filtro e data de liberação dos encerramentos no painel da plataforma.
-- Proposta à API: validação do cadastro de clínica antes de abri-lo na landing (nome vazio, mensagens em português, subdomínios reservados, limite de senha). Ver [`proposta-validacao-do-cadastro-de-clinica.md`](proposta-validacao-do-cadastro-de-clinica.md).
-- Proposta à API: links de email com subdomínio em dev (`<sub>.localhost:5173` em vez de `?tenant=`). Quando entregue, o front remove o modo `?tenant=`. Ver [`proposta-links-de-email-com-subdominio-em-dev.md`](proposta-links-de-email-com-subdominio-em-dev.md).
 - Aviso de encerramento para usuários sem `tenant:manage`: hoje não aparece nada, porque a API não informa. Se o produto quiser avisar toda a equipe, a API precisa expor o pedido (ex.: em `/auth/me`).
 - A equipe da plataforma deve aceitar os mesmos Termos/Política das clínicas? Hoje aceita, porque a API informa a pendência.
 - Escopo do médico sobre pacientes e evolução clínica: há propostas em `../bem-te-vi-api/docs/decisoes/` ainda sem reflexo no front.

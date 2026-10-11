@@ -34,7 +34,7 @@ function resolveBrandingHost(): string {
   if (subdomain) return subdomain;
 
   // Modo antigo, mantido enquanto os links de email da API apontarem para ?tenant=
-  // (ver docs/proposta-links-de-email-com-subdominio-em-dev.md).
+  // (ver docs/changes/15-links-de-email-com-subdominio-em-dev.md).
   const fromUrl = new URLSearchParams(window.location.search).get('tenant');
   try {
     if (fromUrl) sessionStorage.setItem(DEV_TENANT_KEY, fromUrl);
