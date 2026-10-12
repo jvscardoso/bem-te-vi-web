@@ -16,8 +16,12 @@ function monthRange(offset: number) {
   return { start, from: start.toISOString(), to: new Date(end.getTime() - 1).toISOString() };
 }
 
-/** Cards do resumo. Pendente/atrasado/cancelado são o estado atual; recebido é do mês escolhido. */
-export function SummaryCards() {
+/**
+ * Cards do resumo. Pendente/atrasado/cancelado são o estado atual; recebido é do mês escolhido.
+ * `embedded`: bloco da tela inicial, sem margem própria e com as colunas pela largura do bloco
+ * (container query), que pode ser só 1/3 da tela.
+ */
+export function SummaryCards({ embedded = false }: { embedded?: boolean }) {
   const tenantId = useTenantId();
   const [monthOffset, setMonthOffset] = useState(0);
   const { start, from, to } = monthRange(monthOffset);
@@ -28,7 +32,7 @@ export function SummaryCards() {
     placeholderData: keepPreviousData,
   });
 
-  if (query.error) return <ErrorMessages error={query.error} sx={{ mb: 3 }} />;
+  if (query.error) return <ErrorMessages error={query.error} sx={{ mb: embedded ? 0 : 3 }} />;
 
   const data = query.data;
   const cards = [
@@ -39,12 +43,23 @@ export function SummaryCards() {
 
   return (
     <Box
-      sx={{
-        display: 'grid',
-        gap: 2,
-        mb: 3,
-        gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' },
-      }}
+      sx={
+        embedded
+          ? {
+              display: 'grid',
+              gap: 2,
+              height: '100%',
+              gridTemplateColumns: '1fr',
+              '@container (min-width: 440px)': { gridTemplateColumns: 'repeat(2, 1fr)' },
+              '@container (min-width: 860px)': { gridTemplateColumns: 'repeat(4, 1fr)' },
+            }
+          : {
+              display: 'grid',
+              gap: 2,
+              mb: 3,
+              gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' },
+            }
+      }
     >
       <Paper variant="outlined" sx={{ p: 2 }}>
         <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>

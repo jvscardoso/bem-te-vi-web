@@ -8,9 +8,9 @@ Frontend React do bem-te-vi (SaaS whitelabel de gestão de clínicas). API em `.
 2. Conforme a tarefa:
    - `docs/regras-de-negocio.md`: regras e contrato da API. Vale o código da API se divergir.
    - `docs/arquitetura.md`: como o front é organizado e os padrões.
-   - `docs/changes/` (só existe quando há tasks abertas): tasks nos dois sentidos, com o índice `00-indice.md` (origem, situação na API e no front). Vêm da API para o front implementar ou saem do front como pedido para a API desenvolver (numeradas em sequência, no formato de card: contexto, o que muda, critérios de aceite e o que o front faz depois).
+   - `docs/changes/` (só existe quando há tasks abertas): tasks para o **front** implementar (ex.: um contrato novo da API), com o índice `00-indice.md`. Os pedidos do front para a **API** ficam em `../bem-te-vi-api/docs/changes/` (índice lá), e a tabela "Tasks da API" do `docs/status.md` diz o que o front faz depois de cada um.
    - `docs/credenciais-de-teste.md`: contas locais para testar no navegador.
-3. A documentação é versionada, exceto `docs/credenciais-de-teste.md` (senhas de teste) e `docs/changes/` (tasks que só servem para levar à sessão da API), os dois no `.gitignore`. Nunca coloque senhas ou tokens em outro documento.
+3. A documentação é versionada, exceto `docs/credenciais-de-teste.md` (senhas de teste) e `docs/changes/` (tasks do front), os dois no `.gitignore`. Nunca coloque senhas ou tokens em outro documento.
 
 ## Comandos
 
@@ -36,13 +36,13 @@ API local (na pasta da API): `docker compose --profile app up -d --build`. Sobe 
 
 ## Regras que não podem quebrar
 
-- **Não altere o contrato da API.** Se algo bloquear, escreva uma task em `docs/changes/` (próximo número, registrada no `00-indice.md` com origem "Front") para a sessão da API e avise o usuário. Não contorne com hacks.
+- **Não altere o contrato da API.** Se algo bloquear, escreva a task **no repositório da API**, em `../bem-te-vi-api/docs/changes/` (próximo número, olhando os dois índices, porque a numeração é uma só; registrada no `00-indice.md` de lá), inclua-a na tabela "Tasks da API" do `docs/status.md` e avise o usuário. Não contorne com hacks.
 - **401 desloga e 400 não.** Só o `client.ts` limpa a sessão, e só se o token recusado for o atual. Erros de formulário e de fluxo de senha são 400 e nunca deslogam.
 - **Telas e ações são controladas pelas permissões de `/auth/me`** (`can(...)`, `RequirePermission`, `permission` no menu). Nunca use o nome do papel nem as permissões da resposta do login. `appointments:all` define se o usuário vê todas as agendas ou só a própria.
 - **`/reset-password` e `/accept-invite` são fixas**: os emails da API apontam para elas. Não renomeie nem mova essas rotas.
 - **O host enviado no login (e no "esqueci minha senha") é o mesmo da resolução de marca**: sempre `getBrandingHost()`.
 - Nunca reenvie `logoUrl` no PATCH de marca: isso descarta o logo enviado.
-- Não implemente tasks de LGPD ou mudanças de API por conta própria: o usuário traz as tasks em `docs/changes/`.
+- Não implemente tasks de LGPD ou mudanças de API por conta própria: as tasks do front chegam em `docs/changes/`.
 
 ## Convenções de código
 
@@ -60,6 +60,6 @@ API local (na pasta da API): `docker compose --profile app up -d --build`. Sobe 
 1. `npm run typecheck` e `npm run lint` sem erros.
 2. Teste no navegador com a API local (contas em `docs/credenciais-de-teste.md`), inclusive com um usuário sem a permissão envolvida.
 3. Atualize `docs/status.md` (data no topo, tela/task, limitações novas).
-4. Se a mudança veio de uma task, marque a coluna "Situação no front" em `docs/changes/00-indice.md`. Quando todas estiverem concluídas, o usuário decide se os arquivos saem da pasta (o resumo fica no `status.md`).
+4. Se a mudança veio de uma task, marque a situação no índice dela (`docs/changes/00-indice.md` para tasks do front; a coluna "Situação no front" de `../bem-te-vi-api/docs/changes/00-indice.md` e a tabela do `status.md` para pedidos à API). Quando todas estiverem concluídas, o usuário decide se os arquivos saem da pasta (o resumo fica no `status.md`).
 5. Se a regra de negócio ou o contrato mudou, ajuste `docs/regras-de-negocio.md`. Se mudou a estrutura ou um padrão, ajuste `docs/arquitetura.md`.
 6. **Não faça commit**: o usuário commita. No fim, diga o que mudou e o que ficou pendente.

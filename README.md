@@ -11,10 +11,10 @@ O backend é a [`bem-te-vi-api`](../bem-te-vi-api) (NestJS + Prisma). A fonte da
 | [`docs/status.md`](docs/status.md) | **Comece por aqui.** O que está pronto, tela por tela; situação das tasks da API; o que falta; bugs e decisões em aberto |
 | [`docs/arquitetura.md`](docs/arquitetura.md) | Pastas, rotas, sessão, marca da clínica, camada de API, estado, permissões, padrões de formulário, build |
 | [`docs/regras-de-negocio.md`](docs/regras-de-negocio.md) | Regras de negócio e contrato da API, do ponto de vista do front |
-| `docs/changes/` | Tasks em aberto nos dois sentidos: vindas da API para o front e pedidos do front para a API (índice em `00-indice.md`). Só local, fora do git |
+| `docs/changes/` | Tasks para o front implementar, quando há alguma (índice em `00-indice.md`). Pedidos do front para a API ficam em `../bem-te-vi-api/docs/changes/`. Só local, fora do git |
 | [`CLAUDE.md`](CLAUDE.md) | Instruções curtas para sessões de desenvolvimento com o Claude Code |
 
-> Ficam fora do git, no `.gitignore`: `docs/credenciais-de-teste.md` (contas e senhas do ambiente local) e `docs/changes/` (tasks levadas à sessão da API; não vão para o repositório).
+> Ficam fora do git, no `.gitignore`: `docs/credenciais-de-teste.md` (contas e senhas do ambiente local) e `docs/changes/` (tasks do front, só locais).
 
 ## Stack
 
@@ -69,7 +69,7 @@ http://clinica-demo.localhost:5173/login
 
 `http://localhost:5173` puro abre com a marca padrão do bem-te-vi, que é por onde entram os usuários do backoffice. O login só aceita usuários da clínica do endereço.
 
-O modo antigo ainda funciona em `localhost` puro: `http://localhost:5173/login?tenant=clinica-demo` (o valor fica lembrado na aba, e `?tenant=` vazio esquece). Ele continua porque os links dos emails da API em dev usam esse formato. Ver `docs/changes/15-links-de-email-com-subdominio-em-dev.md`.
+O modo antigo ainda funciona em `localhost` puro: `http://localhost:5173/login?tenant=clinica-demo` (o valor fica lembrado na aba, e `?tenant=` vazio esquece). Ele continua porque os links dos emails da API em dev usam esse formato. Ver a task 15 da API (`../bem-te-vi-api/docs/changes/15-links-de-email-com-subdominio-em-dev.md`).
 
 ## Scripts
 

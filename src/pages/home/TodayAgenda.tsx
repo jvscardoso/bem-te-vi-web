@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Link as RouterLink } from 'react-router';
 import {
   Box,
@@ -14,47 +13,30 @@ import {
   Switch,
   Typography,
 } from '@mui/material';
-import { appointmentsApi, appointmentsKeys } from '@/api/appointments';
 import type { Appointment } from '@/api/types';
-import { useAuth, useTenantId } from '@/auth/AuthContext';
+import { useAuth } from '@/auth/AuthContext';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessages } from '@/components/ErrorMessages';
-import { addDays, startOfDay } from '@/lib/dates';
 import { formatTime } from '@/lib/format';
 import { AppointmentDialog } from '@/pages/schedule/AppointmentDialog';
 import { STATUS_COLORS, STATUS_LABELS } from '@/pages/schedule/status';
+import { isPending, useTodayAppointments } from './useTodayAppointments';
 
 /** Atendimentos de hoje (exceto cancelados), com o próximo destacado. */
 export function TodayAgenda() {
-  const tenantId = useTenantId();
   const { user, can } = useAuth();
   // Sem appointments:all a API já devolve só a própria agenda: não há o que filtrar.
   const seesAllAgendas = can('appointments:all');
   const [onlyMine, setOnlyMine] = useState(false);
   const [open, setOpen] = useState<Appointment | null>(null);
-  // Momento de referência fixado ao abrir a tela (React Compiler exige render puro).
-  const [now] = useState(() => Date.now());
-
-  const today = startOfDay(new Date(now));
-  const params = {
-    from: today.toISOString(),
-    to: new Date(addDays(today, 1).getTime() - 1).toISOString(),
-    status: ['scheduled', 'confirmed', 'completed', 'no_show'] as Appointment['status'][],
-  };
-
-  const query = useQuery({
-    queryKey: appointmentsKeys.range(tenantId, params),
-    queryFn: () => appointmentsApi.listAll(tenantId, params),
-  });
+  const { query, now } = useTodayAppointments();
 
   const all = query.data ?? [];
   const mine = all.filter((item) => item.professionalId === user?.userId);
   const items = onlyMine ? mine : all;
-  const next = items.find(
-    (item) => (item.status === 'scheduled' || item.status === 'confirmed') && new Date(item.endsAt).getTime() > now,
-  );
+  const next = items.find((item) => isPending(item) && new Date(item.endsAt).getTime() > now);
   const done = items.filter((item) => item.status === 'completed').length;
-  const pending = items.filter((item) => item.status === 'scheduled' || item.status === 'confirmed').length;
+  const pending = items.filter(isPending).length;
 
   return (
     <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>

@@ -705,7 +705,7 @@ Toda resposta de cobrança (criar, listar, detalhe, editar) inclui `status`, `cr
 
 Só para usuários da clínica-plataforma (criados por script, nunca por signup).
 
-- `GET /platform/tenants?q&page&pageSize` → clínicas com `id, name, subdomain, customDomain, status, closureRequestedAt, createdAt, _count: { users, patients }`. Busca `q` em nome (sem acento/maiúsculas), subdomínio e domínio próprio; todas as palavras precisam casar. **Não há filtro por encerramento nem `deletionAvailableAt`** (proposta em `docs/changes/17-encerramentos-no-painel-da-plataforma.md`).
+- `GET /platform/tenants?q&page&pageSize` → clínicas com `id, name, subdomain, customDomain, status, closureRequestedAt, createdAt, _count: { users, patients }`. Busca `q` em nome (sem acento/maiúsculas), subdomínio e domínio próprio; todas as palavras precisam casar. **Não há filtro por encerramento nem `deletionAvailableAt`** (proposta em `../bem-te-vi-api/docs/changes/17-encerramentos-no-painel-da-plataforma.md`).
 - `DELETE /platform/tenants/:id` com `{ "confirmSubdomain": "..." }` → `204`: exclusão definitiva (seção 17).
 - `PATCH /platform/tenants/:id/status` com `{ "status": "active" | "suspended" }` → `{ id, name, status }`.
 - Suspender tem efeito imediato: usuários da clínica passam a receber `401`, o login falha e a marca pública dá `404`.
@@ -935,7 +935,7 @@ Resumo; o contrato completo está nas tasks 08 a 11 da API (`../bem-te-vi-api/do
 - Paginada (padrão 20, máximo 100), do mais recente para o mais antigo. `from`/`to` em ISO 8601, inclusivos.
 - `audit:read` vem no Admin de clínica nova; nas clínicas existentes, só os papéis de administrador receberam.
 - **Abrir telas de paciente gera registros** (`patient.view`, `patient.list`, `clinical_record.list`). Evite buscas duplicadas ou desnecessárias desses endpoints.
-- A resposta traz `patientId`, mas **não o nome do paciente** (há proposta em `docs/changes/16-nome-do-paciente-na-auditoria.md`).
+- A resposta traz `patientId`, mas **não o nome do paciente** (há proposta em `../bem-te-vi-api/docs/changes/16-nome-do-paciente-na-auditoria.md`).
 
 | `action` | Rótulo | `details` |
 |---|---|---|

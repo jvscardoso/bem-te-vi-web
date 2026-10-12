@@ -24,7 +24,7 @@ Retrato do que existe no código. Leia antes de começar uma tarefa. Regras de n
 
 | Tela | Rota | Permissão | O que faz |
 |---|---|---|---|
-| Início | `/inicio` | — | Painel com widgets por permissão: agenda de hoje (respeita `appointments:all`), cobranças atrasadas, atalhos (novo agendamento, novo paciente, nova cobrança). |
+| Início | `/inicio` | — | Blocos na ordem e largura do **layout da clínica** (resumo financeiro, atendimentos de hoje, pacientes, cobranças em atraso, agenda de hoje, calendário do mês), cada um só para quem tem a permissão dele; atalhos no topo (novo agendamento, paciente, cobrança). O layout é editado em **Configurações › Tela inicial**. Sem layout salvo, vale o padrão do front. |
 | Agenda | `/agenda` | `appointments:read` | Visões dia (colunas por profissional) e semana em grade de horários, e **mês** em calendário (até 3 por dia e "+N mais"; o número do dia ou o "+N mais" abre a visão Dia, e o Voltar retorna ao mês; clique no espaço vazio cria agendamento às 9h); lista no celular (no mês, os dias do mês); visão na URL (`?visao=dia` ou `?visao=mes`; sem o parâmetro, semana); filtro por profissional só com `appointments:all`; criar/editar/cancelar/mudar status; sem `all`, o profissional é sempre o próprio usuário. |
 | Pacientes | `/pacientes` | `patients:read` | Lista paginada com busca (debounce) na URL. |
 | Ficha do paciente | `/pacientes/:id` | `patients:read` | **Exportar dados (LGPD)** com `patients:export`: confirmação com aviso, baixa o JSON e oferece "Ver em formato legível" (imprimir/salvar PDF) sem nova chamada. Dados + abas Anamneses, Agendamentos (aviso "só a sua agenda" sem `all`) e Cobranças (com `billing:read`) e **Histórico de acessos** (com `audit:read`: lista cronológica com "carregar mais" e os campos alterados de cada edição). Remover com confirmação. |
@@ -37,7 +37,7 @@ Retrato do que existe no código. Leia antes de começar uma tarefa. Regras de n
 | Usuários | `/usuarios` | `users:manage` | Lista; criar por **convite** (padrão) ou com senha (com gerador); editar papel/status/duração; "Reenviar convite" para `invited`, "Redefinir senha" para os demais; regras de "acima de si" e último admin na UI. |
 | Papéis e permissões | `/papeis` | `roles:manage` | CRUD de papéis com permissões agrupadas por área; marcar escrita/`all` marca a leitura; bloqueia o que o ator não tem. |
 | Auditoria | `/auditoria` | `audit:read` | Trilha da clínica (LGPD): filtros por usuário (só com `users:manage`, que lista os usuários), ação, paciente (busca) e período; tabela com data, usuário, ação e link para a ficha; diálogo de detalhes (IP, navegador, campos alterados). Filtros na URL, exceto o paciente. |
-| Configurações | `/configuracoes` | `tenant:manage` | Abas Dados, Agenda (durações), Marca (nome fantasia, cores com pré-visualização, **upload de logo** ou URL externa), Domínio (registro TXT, verificar agora) e **Encerrar conta** (exportar todos os dados com `patients:export`; pedir o encerramento com senha e confirmação; cancelar durante a carência). Salvar a marca re-tematiza o app na hora. |
+| Configurações | `/configuracoes` | `tenant:manage` | Abas Dados, Agenda (durações), Marca (nome fantasia, cores com pré-visualização, **upload de logo** ou URL externa), Domínio (registro TXT, verificar agora) , **Tela inicial** (blocos do Início: adicionar, remover, arrastar ou mover, largura 1/3, 1/2, 2/3 ou inteira, restaurar padrão, descartar; vale para toda a equipe; salvar depende da task 18 da API e hoje mostra aviso) e **Encerrar conta** (exportar todos os dados com `patients:export`; pedir o encerramento com senha e confirmação; cancelar durante a carência). Salvar a marca re-tematiza o app na hora. |
 | Minha conta | `/minha-conta` | — | Dados do usuário, trocar senha (troca o token), duração padrão própria (`appointments:write`). |
 | Não encontrado | `*` | — | 404 dentro do shell. |
 
@@ -63,9 +63,26 @@ Retrato do que existe no código. Leia antes de começar uma tarefa. Regras de n
 
 ## Tasks da API
 
-Todas as 11 tasks recebidas foram concluídas e conferidas no código em 09/10/2026. Os arquivos saíram de `docs/changes/` do front nessa data; os originais continuam na pasta da API (`../bem-te-vi-api/docs/changes/`). Tasks novas voltam a entrar em `docs/changes/`, com um `00-indice.md`.
+As 11 tasks recebidas da API (01 a 11) foram concluídas e conferidas no código em 09/10/2026.
 
-**Abertas:** tasks 12 a 17, todas pedidos do front para a API (as propostas que antes ficavam em `docs/proposta-*.md` viraram as tasks 14 a 17 em 10/10/2026). Situação de cada uma em [`changes/00-indice.md`](changes/00-indice.md).
+**Convenção (desde 10/10/2026):** mudança que a **API** precisa fazer vira task em `../bem-te-vi-api/docs/changes/` (índice `00-indice.md` lá); mudança que o **front** precisa fazer vira task em `docs/changes/` deste repositório. A numeração é uma só nos dois. As duas pastas ficam fora do git.
+
+**Tasks do front abertas:** 20, segurança do front antes de produção (cabeçalhos e CSP na hospedagem, fonte sem Google Fonts, sessão em computador compartilhado, logout de verdade, lint e CI). Ver `docs/changes/00-indice.md`.
+
+**Pedidos do front abertos na API** (situação de cada um em `../bem-te-vi-api/docs/changes/00-indice.md`). A coluna da direita é o que o front faz quando a API entregar:
+
+| # | Pedido | Depois, no front |
+|---|---|---|
+| 12 | Busca de pacientes também pelo telefone | Trocar os textos para "nome, CPF ou telefone" (`PatientSearch`, lista de pacientes, Início, `PatientPicker`) |
+| 13 | Permissão `appointments:attend` (quem atende) | Duração padrão só para quem atende (`UserDialog`, Minha conta), rótulo em `permissionGroups.ts`, aviso de papel sem agenda |
+| 14 | Validação do cadastro de clínica | Atualizar `cadastro-de-clinica-na-landing.md`; trocar o regex do subdomínio em Configurações se o formato mudar |
+| 15 | Links de email com subdomínio em dev | Remover o modo `?tenant=` de `brandingHost.ts` e atualizar README, `.env.example` e CLAUDE.md |
+| 16 | Nome do paciente na auditoria | Mostrar o nome (e "removido") na tela de Auditoria |
+| 17 | Encerramentos no painel da plataforma | Filtro, ordenação e data de liberação na lista de Clínicas |
+| 18 | Configurações de tela (`/configs`), começando pelo layout do Início | Testar salvar, restaurar e leitura por quem não edita (Configurações › Tela inicial); tirar o aviso de rota indisponível |
+| 19 | Revisão de segurança | "Sair" chamando o logout da API, renovação de token se houver, CSP na hospedagem |
+
+**Recebidas da API (concluídas):**
 
 | # | Task | Situação | Onde está no código |
 |---|---|---|---|
@@ -87,19 +104,20 @@ Todas as 11 tasks recebidas foram concluídas e conferidas no código em 09/10/2
 2. Textos oficiais dos Termos de Uso e da Política de Privacidade (cadastrar por versão em `src/legal/documents.ts`, TODO no arquivo). Ao trocar um texto, a API precisa subir `LEGAL_TERMS_VERSION` / `LEGAL_PRIVACY_VERSION`.
 3. Landing page do produto: **fora deste repositório** (decidido em 10/10/2026). Ela faz o cadastro de clínicas; o contrato e as regras estão em [`cadastro-de-clinica-na-landing.md`](cadastro-de-clinica-na-landing.md).
 4. Testes automatizados (nenhum existe).
-5. Build/deploy de produção: não há configuração de hospedagem nem de fallback de SPA (ver [`arquitetura.md`](arquitetura.md#build-e-deploy)).
-6. **Tasks para a API (12 a 17):** busca por telefone (12), quem atende pacientes (13), validação do cadastro de clínica (14), links de email com subdomínio em dev (15), nome do paciente na auditoria (16) e encerramentos no painel da plataforma (17). Situação e o que o front faz depois de cada uma no [`changes/00-indice.md`](changes/00-indice.md).
+5. Build/deploy de produção: não há configuração de hospedagem nem de fallback de SPA (ver [`arquitetura.md`](arquitetura.md#build-e-deploy)). Incluir os cabeçalhos de segurança e a CSP da task 20 (`docs/changes/20-seguranca-do-front.md`).
+6. **Pedidos para a API (12 a 19):** ver a tabela em "Tasks da API" acima. Os mais urgentes antes de produção: 19 (segurança) e 14 (validação do cadastro, antes da landing).
 
 ## Limitações e bugs conhecidos
 
-- **Nome do paciente na auditoria:** a API devolve só `patientId`, e buscar o nome geraria um `patient.view` por linha. A tela mostra "Abrir ficha" (ou o nome, quando filtrada por paciente). Task 16 para a API em [`changes/16-nome-do-paciente-na-auditoria.md`](changes/16-nome-do-paciente-na-auditoria.md).
-- **Painel da plataforma sem filtro de encerramento:** a lista não filtra nem ordena por pedido e não traz a data de liberação. O botão "Excluir definitivamente" aparece para toda clínica com pedido, e a carência é conferida pela API (`409` com a data). Task 17 em [`changes/17-encerramentos-no-painel-da-plataforma.md`](changes/17-encerramentos-no-painel-da-plataforma.md).
+- **Nome do paciente na auditoria:** a API devolve só `patientId`, e buscar o nome geraria um `patient.view` por linha. A tela mostra "Abrir ficha" (ou o nome, quando filtrada por paciente). Task 16 para a API em `../bem-te-vi-api/docs/changes/16-nome-do-paciente-na-auditoria.md`.
+- **Painel da plataforma sem filtro de encerramento:** a lista não filtra nem ordena por pedido e não traz a data de liberação. O botão "Excluir definitivamente" aparece para toda clínica com pedido, e a carência é conferida pela API (`409` com a data). Task 17 em `../bem-te-vi-api/docs/changes/17-encerramentos-no-painel-da-plataforma.md`.
 - **Usuários da plataforma também passam pelo aceite de Termos/Política**, porque a API informa a pendência para eles. Ver decisões em aberto.
 - **Nome do arquivo de exportação** é montado pelo front (`paciente-<id>.json`): a API não expõe `Content-Disposition` no CORS (`app.enableCors()` sem `exposedHeaders`). Se um dia a API quiser definir o nome, precisa expor o header.
 - **Impressão do formato legível** não foi testada pela automação (abre a janela de impressão do sistema). As regras de `@media print` em `PatientExportView` escondem o app e soltam o diálogo para imprimir todas as páginas; vale conferir manualmente.
 - **Exportar paciente removido** fica na tela de removidos, que exige `patients:write`. Quem tem só `patients:export` não chega lá (os admins têm as duas).
 - **Filtro por usuário na auditoria** só aparece para quem também tem `users:manage` (a lista de usuários exige essa permissão). Lista os primeiros 100 usuários.
 - **Telas de paciente geram registros na trilha:** cada abertura de ficha, lista ou aba de anamneses é um registro. Para não poluir, as consultas de pacientes e de fichas não são refeitas ao voltar o foco para a aba (`setQueryDefaults` em `main.tsx`). Depois de salvar uma edição, a ficha é relida, e isso conta como nova visualização. O painel inicial também consulta a lista de pacientes (para o total) e gera um "Pesquisou pacientes" a cada abertura. A busca global do topo gera um "Pesquisou pacientes" por termo buscado (mínimo de 2 caracteres e 400 ms sem digitar, para não registrar letra por letra).
+- **Tela inicial com buracos:** os blocos seguem a ordem do layout; quando um bloco não cabe no resto da linha (ou some por falta de permissão), ele desce e pode ficar um espaço vazio. Foi escolhido manter a ordem previsível em vez de reorganizar sozinho.
 - **Nome de quem preencheu a anamnese:** a API devolve só `filledByUserId`. O front resolve o nome pela lista de profissionais; sem `appointments:all` essa lista só tem o próprio usuário, então o nome de outros não aparece. Sugestão para a API: devolver `filledBy { id, name }`.
 - **Aceite pendente no meio da sessão:** o `/auth/me` é relido ao abrir o app e ao voltar o foco para a aba (`staleTime` 30 s). Se a API publicar uma versão nova, quem já está com o app aberto só vê o modal na próxima releitura, não na hora.
 - **Mensagem do 400 de versão desatualizada** continua visível no convite depois que o aceite é desmarcado; some no próximo envio.

@@ -8,6 +8,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { BrandingTab } from './BrandingTab';
 import { DomainTab } from './DomainTab';
 import { GeneralTab } from './GeneralTab';
+import { HomeLayoutTab } from './HomeLayoutTab';
 import { ScheduleTab } from './ScheduleTab';
 import { ClosureTab } from './closure/ClosureTab';
 
@@ -16,6 +17,7 @@ const TABS = [
   { value: 'agenda', label: 'Agenda' },
   { value: 'marca', label: 'Marca' },
   { value: 'dominio', label: 'Domínio próprio' },
+  { value: 'tela-inicial', label: 'Tela inicial' },
   { value: 'encerrar', label: 'Encerrar conta' },
 ] as const;
 
@@ -31,7 +33,8 @@ export function SettingsPage() {
   const query = useQuery({ queryKey: tenantKeys.detail(tenantId), queryFn: () => tenantsApi.get(tenantId) });
 
   return (
-    <Box sx={{ maxWidth: 880 }}>
+    // A tela inicial precisa da largura toda: a prévia mostra os blocos com a largura real.
+    <Box sx={{ maxWidth: tab === 'tela-inicial' ? undefined : 880 }}>
       <PageHeader title="Configurações da clínica" />
       <Tabs
         value={tab}
@@ -56,6 +59,7 @@ export function SettingsPage() {
           {tab === 'agenda' && <ScheduleTab tenant={query.data} />}
           {tab === 'marca' && <BrandingTab tenant={query.data} />}
           {tab === 'dominio' && <DomainTab tenant={query.data} />}
+          {tab === 'tela-inicial' && <HomeLayoutTab />}
           {tab === 'encerrar' && <ClosureTab />}
         </Box>
       )}

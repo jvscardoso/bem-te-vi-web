@@ -65,7 +65,7 @@ Definido em `src/router.tsx` com `createBrowserRouter`.
 
 - `getBrandingHost()` (`src/theme/brandingHost.ts`) decide o endereço uma vez por carregamento (função interna `resolveBrandingHost`):
   - produção: `window.location.host`;
-  - dev: subdomínio de `localhost` (`clinica-demo.localhost:5173` → manda só `clinica-demo`, que a API trata como subdomínio). Em `localhost` puro, modo antigo: `?tenant=<subdomínio>` (lembrado na aba em `sessionStorage` `btv.devTenant`; `?tenant=` vazio esquece), senão `VITE_DEV_TENANT`, senão o host. O modo antigo sai quando a API mudar os links de email ([proposta](changes/15-links-de-email-com-subdominio-em-dev.md)). `devClinicUrl()` monta o endereço de outra clínica no modo em uso.
+  - dev: subdomínio de `localhost` (`clinica-demo.localhost:5173` → manda só `clinica-demo`, que a API trata como subdomínio). Em `localhost` puro, modo antigo: `?tenant=<subdomínio>` (lembrado na aba em `sessionStorage` `btv.devTenant`; `?tenant=` vazio esquece), senão `VITE_DEV_TENANT`, senão o host. O modo antigo sai quando a API mudar os links de email (task 15: `../bem-te-vi-api/docs/changes/15-links-de-email-com-subdominio-em-dev.md`). `devClinicUrl()` monta o endereço de outra clínica no modo em uso.
 - `BrandingProvider` busca `GET /public/branding?host=` (chave `['public-branding', host]`, `staleTime` 5 min, sem retry em 404), monta o tema MUI com `createAppTheme(cores)`, aplica `CssBaseline` e põe `tradeName ?? name` no `document.title`. `useBranding()` dá `status` (`loading`/`found`/`notFound`/`error`), `displayName` e `logoUrl`. Sem clínica, vale a marca padrão do bem-te-vi.
 - **Modo claro/escuro** (`src/theme/colorMode.ts`): `useColorModeState` lê `localStorage` `btv.colorMode` antes do primeiro render (sem piscar) e, sem escolha salva, acompanha `prefers-color-scheme`. O `BrandingProvider` passa o modo para `createAppTheme` e expõe `useColorMode()` (`mode`, `setMode`). Não usamos as variáveis CSS do MUI (`colorSchemes`) porque a pré-visualização de marca usa um `ThemeProvider` aninhado.
   - No escuro, `createAppTheme` clareia as cores da clínica até um contraste mínimo com o fundo (`readableOnDark`).
@@ -108,6 +108,16 @@ Definido em `src/router.tsx` com `createBrowserRouter`.
 - `appointments:all`: sem ela, a agenda, o novo agendamento, o painel e a aba de agendamentos do paciente trabalham só com o próprio usuário (sem seletor de profissional).
 - Regras de conta (`auth/privileges.ts`): `isRoleAbove` / `missingPermissions` desabilitam papéis e usuários "acima" do ator; `isAdminRole` / `ADMIN_PERMISSIONS` apoiam a regra do último administrador. Detalhes na seção 4.3 das regras.
 - Usuário com `platform:manage` só vê o backoffice (`ClinicAreaOnly`, `HomeRedirect`).
+
+## Tela inicial configurável
+
+- `src/pages/home/widgets.tsx` é o **catálogo de blocos**: título, descrição, permissão de quem vê, larguras aceitas, largura padrão e o componente. A API (task 18) só guarda a lista `{ id, type, width }` na ordem, dentro das configurações de tela da clínica (`src/api/configs.ts`: `GET /tenants/:id/configs` → `layouts.home`; `PUT`/`DELETE /configs/layouts/:screen`). Tipo novo não precisa de mudança na API; tela configurável nova é uma chave nova em `layouts`.
+- `layout.ts`: layout padrão (`DEFAULT_WIDGETS`), larguras em colunas de uma grade de 12 (`WIDTH_SPANS`: no celular tudo ocupa a linha; em telas médias 1/3 vira metade e 2/3 vira a linha) e `normalizeWidgets` (descarta tipo desconhecido ou repetido e corrige largura não aceita).
+- `useHomeLayout` lê o layout salvo (ou o padrão). `HomeGrid` desenha os blocos; com `editing`, mostra a barra de cada um (arrastar, largura, mover, remover) e a prévia inerte. Fora da edição, esconde os blocos sem permissão.
+- O editor fica em **Configurações › Tela inicial** (`src/pages/settings/HomeLayoutTab.tsx`, aba sem a largura máxima das outras para a prévia mostrar as larguras reais). O Início só exibe.
+- Cada bloco é um `Paper` com `height: 100%` (os da mesma linha ficam da mesma altura) e se adapta à **própria largura** com container queries (o item da grade tem `containerType: inline-size`; ex.: `SummaryCards embedded`).
+- Salvar igual ao padrão chama o `DELETE` (volta a acompanhar o padrão do front). `404` no `GET` = sem layout salvo.
+- **Bloco novo:** criar o componente em `src/pages/home/`, registrar em `HOME_WIDGETS` e, se fizer sentido, incluir no `DEFAULT_WIDGETS`.
 
 ## Padrões de componentes e formulários
 
