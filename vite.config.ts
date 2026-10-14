@@ -11,6 +11,16 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // A API na mesma origem do front (VITE_API_URL=/api): o cookie de refresh é SameSite=Strict, e
+    // `clinica-a.localhost` e `localhost:3000` são sites diferentes para o navegador. Pelo proxy,
+    // o cookie vale para /api/auth em qualquer subdomínio, como em produção nos domínios próprios.
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
   },
   build: {
     rolldownOptions: {

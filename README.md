@@ -55,7 +55,7 @@ npm run dev                  # http://localhost:5173
 
 | Variável | Uso |
 |---|---|
-| `VITE_API_URL` | URL da API (padrão `http://localhost:3000`) |
+| `VITE_API_URL` | URL da API. Em dev, `/api` (proxy do Vite para `http://localhost:3000`): o cookie de refresh da sessão só funciona com a API na mesma origem do front |
 | `VITE_DEV_TENANT` | Subdomínio da clínica usado em `localhost` puro quando a URL não traz `?tenant=` (modo antigo) |
 | `VITE_APP_BASE_DOMAIN` | Domínio base das clínicas em produção (ex.: `bemtevi.com.br`), usado para mostrar o endereço da clínica em Configurações e no backoffice |
 

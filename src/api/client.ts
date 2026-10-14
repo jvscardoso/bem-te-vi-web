@@ -1,7 +1,23 @@
 import { session } from '@/auth/session';
 import type { ApiError as ApiErrorBody } from './types';
 
+// Pode ser relativa (`/api`): em dev o Vite faz o proxy para a API, e em domínio próprio de
+// clínica a API é servida no mesmo domínio. Assim o cookie de refresh (SameSite=Strict) vale.
 const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000').replace(/\/$/, '');
+
+/** Renova o token quando falta menos que isto para vencer. */
+const REFRESH_MARGIN_MS = 60_000;
+
+// Rotas de autenticação não entram no ciclo "401 → refresh → repetir": o 401 delas é a resposta
+// (senha errada, sessão encerrada), não um token vencido.
+const AUTH_ROUTES = new Set([
+  '/auth/login',
+  '/auth/refresh',
+  '/auth/logout',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+  '/auth/accept-invite',
+]);
 
 type QueryValue = string | number | boolean | null | undefined | (string | number)[];
 
@@ -30,7 +46,7 @@ export class ApiError extends Error {
 }
 
 function buildUrl(path: string, query?: Record<string, QueryValue>) {
-  const url = new URL(API_URL + path);
+  const url = new URL(API_URL + path, window.location.origin);
   if (query) {
     for (const [key, value] of Object.entries(query)) {
       if (value === undefined || value === null || value === '') continue;
@@ -56,8 +72,41 @@ function messagesFor(status: number, body: ApiErrorBody | null): string[] {
   return ['Não foi possível concluir a operação.'];
 }
 
-export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+let refreshing: Promise<string | null> | null = null;
+
+/**
+ * Troca o cookie de refresh por um token de acesso novo e o guarda na sessão. Devolve `null` se
+ * a sessão acabou (401). Um refresh por vez: chamadas simultâneas (várias requisições com o token
+ * vencido, o carregamento da página) reaproveitam a mesma promessa, porque o refresh é rotativo e
+ * um segundo envio do mesmo cookie fora da janela de tolerância encerraria a sessão.
+ */
+export function refreshSession(): Promise<string | null> {
+  refreshing ??= (async () => {
+    try {
+      const { accessToken } = await request<{ accessToken: string }>('/auth/refresh', { method: 'POST', auth: false });
+      session.setToken(accessToken);
+      return accessToken;
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) return null;
+      throw error;
+    } finally {
+      refreshing = null;
+    }
+  })();
+  return refreshing;
+}
+
+export async function request<T>(path: string, options: RequestOptions = {}, retried = false): Promise<T> {
   const { method = 'GET', body, query, auth = true, signal } = options;
+  const renewable = auth && !AUTH_ROUTES.has(path);
+
+  // Renova antes de vencer, para a requisição não ir com um token que a API vai recusar.
+  if (renewable && session.getToken() && session.expiresWithin(REFRESH_MARGIN_MS)) {
+    if ((await refreshSession()) === null) {
+      session.clear('expired');
+      throw new ApiError(401, null, ['Sua sessão expirou. Entre novamente.']);
+    }
+  }
 
   const headers: Record<string, string> = { Accept: 'application/json' };
   // FormData (upload) vai como está: o navegador define o Content-Type com o boundary do multipart.
@@ -73,6 +122,8 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
       headers,
       body: body === undefined ? undefined : isFormData ? body : JSON.stringify(body),
       signal,
+      // O cookie de refresh (HttpOnly) só vai e volta com `include`, também entre origens.
+      credentials: 'include',
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') throw error;
@@ -91,10 +142,16 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
 
   if (!response.ok) {
     const errorBody = (data as ApiErrorBody | null) ?? null;
-    // Token expirado, usuário desativado, clínica suspensa ou sessão encerrada
-    // pela troca de senha: descarta a sessão (os guards levam ao login).
-    // Só se o token recusado ainda for o atual — após trocar a própria senha,
-    // requisições antigas em voo não podem derrubar a sessão nova.
+    if (response.status === 401 && token && renewable && !retried) {
+      // O token já foi trocado enquanto esta requisição estava em voo (outro refresh, troca de
+      // senha): repete com o atual. Senão, tenta renovar uma vez e repetir.
+      const current = session.getToken();
+      if (current && current !== token) return request<T>(path, options, true);
+      if (await refreshSession()) return request<T>(path, options, true);
+    }
+    // Sessão encerrada de vez (refresh recusado, conta desativada, clínica suspensa): descarta a
+    // sessão e os guards levam ao login. Só se o token recusado ainda for o atual: requisições
+    // antigas em voo não podem derrubar uma sessão que já foi renovada.
     if (response.status === 401 && token && session.getToken() === token) session.clear('expired');
     throw new ApiError(response.status, errorBody, messagesFor(response.status, errorBody));
   }

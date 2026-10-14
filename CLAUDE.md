@@ -28,7 +28,7 @@ API local (na pasta da API): `docker compose --profile app up -d --build`. Sobe 
 ## Arquitetura em poucas linhas
 
 - `src/api/`: `client.ts` (fetch + Bearer + `ApiError`) e um módulo por recurso com `xxxApi` e `xxxKeys`.
-- `src/auth/`: token em `sessionStorage`. `AuthProvider` lê `GET /auth/me` (fonte das permissões). Guards: `RequireAuth`, `RequirePermission`, `ClinicAreaOnly`.
+- `src/auth/`: token de acesso só em memória (15 min), renovado sozinho pelo cookie de refresh (`refreshSession` em `client.ts`; ver `docs/arquitetura.md`, Sessão). `AuthProvider` lê `GET /auth/me` (fonte das permissões). Guards: `RequireAuth`, `RequirePermission`, `ClinicAreaOnly`.
 - `src/theme/`: `getBrandingHost()` define a clínica do endereço. `BrandingProvider` busca a marca pública e monta o tema MUI.
 - `src/router.tsx`: data router com páginas lazy via `page(load, name)`.
 - Estado do servidor em TanStack Query. Filtros, página, aba e data ficam na URL.
@@ -37,7 +37,7 @@ API local (na pasta da API): `docker compose --profile app up -d --build`. Sobe 
 ## Regras que não podem quebrar
 
 - **Não altere o contrato da API.** Se algo bloquear, escreva a task **no repositório da API**, em `../bem-te-vi-api/docs/changes/` (próximo número, olhando os dois índices, porque a numeração é uma só; registrada no `00-indice.md` de lá), inclua-a na tabela "Tasks da API" do `docs/status.md` e avise o usuário. Não contorne com hacks.
-- **401 desloga e 400 não.** Só o `client.ts` limpa a sessão, e só se o token recusado for o atual. Erros de formulário e de fluxo de senha são 400 e nunca deslogam.
+- **401 desloga e 400 não.** Num `401`, o `client.ts` tenta renovar o token uma vez; só se a renovação falhar ele limpa a sessão, e só se o token recusado for o atual. Erros de formulário e de fluxo de senha são 400 e nunca deslogam.
 - **Telas e ações são controladas pelas permissões de `/auth/me`** (`can(...)`, `RequirePermission`, `permission` no menu). Nunca use o nome do papel nem as permissões da resposta do login. `appointments:all` define se o usuário vê todas as agendas ou só a própria.
 - **`/reset-password` e `/accept-invite` são fixas**: os emails da API apontam para elas. Não renomeie nem mova essas rotas.
 - **O host enviado no login (e no "esqueci minha senha") é o mesmo da resolução de marca**: sempre `getBrandingHost()`.

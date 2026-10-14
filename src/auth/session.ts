@@ -1,33 +1,28 @@
 // Guarda o token de acesso da sessão atual.
 //
-// Usamos sessionStorage (e não localStorage): o token sobrevive a um reload,
-// mas não é compartilhado entre abas nem persiste após fechar o navegador,
-// reduzindo a janela de exposição em máquinas compartilhadas (recepção etc.).
-
-const TOKEN_KEY = 'btv.accessToken';
+// Só em memória (task 21): um script injetado por XSS não acha o token no storage, e o que
+// estiver em memória vale por poucos minutos (o token de acesso dura 15). Quem mantém a sessão
+// entre reloads é o refresh token, num cookie HttpOnly que o JavaScript não lê; ao abrir a
+// página, o AuthProvider troca esse cookie por um token novo (`POST /auth/refresh`).
 
 export type LogoutReason = 'logout' | 'expired';
 
 type Listener = () => void;
 
 const listeners = new Set<Listener>();
-let token: string | null = readToken();
+let token: string | null = null;
+/** Vencimento do token atual (ms), lido do `exp` do JWT. */
+let expiresAt: number | null = null;
 let lastLogoutReason: LogoutReason | null = null;
 
-function readToken(): string | null {
+/** `exp` do JWT, sem validar a assinatura (quem valida é a API; aqui é só para renovar antes). */
+function readExpiry(jwt: string): number | null {
   try {
-    return sessionStorage.getItem(TOKEN_KEY);
+    const payload = jwt.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const { exp } = JSON.parse(atob(payload)) as { exp?: unknown };
+    return typeof exp === 'number' ? exp * 1000 : null;
   } catch {
     return null;
-  }
-}
-
-function writeToken(value: string | null) {
-  try {
-    if (value) sessionStorage.setItem(TOKEN_KEY, value);
-    else sessionStorage.removeItem(TOKEN_KEY);
-  } catch {
-    // Armazenamento indisponível (modo privado etc.): segue só em memória.
   }
 }
 
@@ -38,18 +33,21 @@ function emit() {
 export const session = {
   getToken: () => token,
 
+  /** O token vence em menos de `marginMs` (ou já venceu). Sem `exp` legível, conta como válido. */
+  expiresWithin: (marginMs: number) => expiresAt !== null && expiresAt - Date.now() < marginMs,
+
   setToken(value: string) {
     token = value;
+    expiresAt = readExpiry(value);
     lastLogoutReason = null;
-    writeToken(value);
     emit();
   },
 
   clear(reason: LogoutReason) {
     if (token === null) return;
     token = null;
+    expiresAt = null;
     lastLogoutReason = reason;
-    writeToken(null);
     emit();
   },
 

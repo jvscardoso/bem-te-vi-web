@@ -25,6 +25,12 @@ export const authApi = {
 
   me: () => api.get<Me>('/auth/me'),
 
+  /**
+   * Encerra a sessão no servidor (o token atual passa a dar 401) e apaga o cookie de refresh.
+   * Sempre 204; manda o token mesmo vencido, para a API achar a sessão.
+   */
+  logout: () => api.post<void>('/auth/logout'),
+
   changePassword: (currentPassword: string, newPassword: string) =>
     api.patch<ChangePasswordResponse>('/auth/me/password', { currentPassword, newPassword }),
 };

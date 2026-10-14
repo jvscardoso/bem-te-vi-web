@@ -128,7 +128,11 @@ Resposta `200`:
 
 ### 3.2 Sessão
 
-- JWT expira em **1 dia** (configurável). **Não há refresh token** nem logout no servidor: logout = descartar o token no cliente. Em `401`, redirecione para o login.
+- **Token de acesso** (JWT) expira em **15 minutos**. O login também põe um cookie `btv_refresh` (`HttpOnly`, `SameSite=Strict`), que o JavaScript não lê; o `fetch` precisa de `credentials: 'include'`.
+- `POST /auth/refresh` (sem corpo, sem `Authorization`, com o cookie) → `200 { accessToken }` e normalmente um cookie novo (é rotativo). `401` = sessão acabou (cookie ausente ou vencido, sessão encerrada, senha trocada, conta desativada, clínica suspensa): ir para o login. O refresh vence com **12 h sem uso**; a sessão dura no máximo **24 h** desde o login. Duas abas renovando juntas funcionam (tolerância de 10 s); fora disso, reenviar um refresh já usado é tratado como roubo e encerra a sessão.
+- `POST /auth/logout` (cookie + `Authorization`, mesmo vencido) → sempre `204`. Encerra a sessão no servidor: o token dela passa a dar `401` e o cookie é apagado.
+- Token sem sessão (emitido antes do deploy da task 19 da API) → `401`, uma vez.
+- **CORS:** só origens conhecidas (`APP_BASE_DOMAIN` e subdomínios, domínios próprios verificados, `CORS_EXTRA_ORIGINS`; em dev, `localhost` e `*.localhost`), com `Access-Control-Allow-Credentials: true`. O cookie `SameSite=Strict` exige a API no mesmo site do front: em dev o front usa o proxy `/api` do Vite; nos domínios próprios de clínica, a API precisa ser servida em `<domínio>/api`.
 - **Estado sempre fresco:** a cada requisição a API relê usuário, status da clínica e permissões do banco. Se um admin desativar o usuário, suspender a clínica ou mudar as permissões do papel, o efeito é imediato (`401`/`403`) mesmo com token válido.
 - As `permissions` do login podem ficar desatualizadas. Para recarregar, use:
 
@@ -152,7 +156,7 @@ Recomendação: chamar `/auth/me` ao abrir o app (com token salvo) e ao voltar o
 { "currentPassword": "...", "newPassword": "min8chars" }
 ```
 
-- Resposta `200`: `{ "accessToken": "..." }`. **Substitua o token salvo por este**: a troca encerra todas as sessões do usuário (em qualquer dispositivo), inclusive a que fez a troca.
+- Resposta `200`: `{ "accessToken": "..." }`. **Substitua o token em memória por este.** A sessão (e o cookie de refresh) de quem trocou continua; todas as outras sessões do usuário, em qualquer dispositivo, caem.
 - Senha atual errada → `400` "Senha atual incorreta" (é `400` de propósito, não `401`: não deslogue o usuário).
 - `newPassword`: 8 a 200 caracteres.
 
@@ -748,7 +752,7 @@ Só para usuários da clínica-plataforma (criados por script, nunca por signup)
 
 Pontos em que o front vai esbarrar e que podem exigir ajuste na API ou workaround:
 
-1. **Sem refresh token:** a sessão dura o tempo do JWT (1 dia) e depois exige novo login.
+1. ~~Sem refresh token~~: resolvido em 14/10/2026 (task 19 da API / 21 do front): token de 15 min + refresh por cookie + logout no servidor (seção 3.2).
 2. **Sem exclusão de usuário** — só desativação.
 3. **Listagens sem busca:** usuários, papéis e agenda não têm `q`.
 4. **Agenda não filtra por vários profissionais** de uma vez (um `professionalId` ou todos).

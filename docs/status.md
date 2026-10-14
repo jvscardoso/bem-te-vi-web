@@ -1,4 +1,4 @@
-Atualizado em 10/10/2026.
+Atualizado em 14/10/2026.
 
 # Status do front (bem-te-vi-web)
 
@@ -57,7 +57,7 @@ Retrato do que existe no código. Leia antes de começar uma tarefa. Regras de n
 - **Aviso de encerramento da conta:** com pedido ativo, um banner em todas as telas da clínica para quem tem `tenant:manage`, com "Exportar dados" e "Cancelar encerramento". Os demais usuários não veem (a API só informa o pedido a quem tem `tenant:manage`).
 - **Aceite pendente de Termos/Política (LGPD):** com `pendingLegalDocuments` não vazio em `/auth/me`, o `RequireAuth` mostra um modal que não fecha (`PendingLegalScreen`) no lugar do app, tanto da clínica quanto da plataforma. "Aceitar e continuar" envia as duas versões vigentes a `POST /auth/me/legal-acceptances`; "Sair" desloga. Textos diferentes para os dois documentos pendentes e para versão nova de um só.
 - Whitelabel por endereço (subdomínio / domínio próprio; em dev, `<subdomínio>.localhost:5173`, com `?tenant=` ainda aceito em localhost puro), tema MUI montado a partir das cores da clínica.
-- Sessão com `GET /auth/me` sempre fresco; 401 desloga com aviso "sessão expirada"; 400 nunca desloga.
+- **Sessão (task 21):** token de acesso de 15 min só em memória, renovado sozinho pelo cookie de refresh (antes de vencer, ou uma vez depois de um `401`; um refresh por vez); o reload recupera a sessão pelo cookie; "Sair" encerra a sessão no servidor. `GET /auth/me` sempre fresco; refresh recusado leva ao login com aviso "sessão expirada"; 400 nunca desloga. Em dev, a API passa pelo proxy `/api` do Vite (o cookie é `SameSite=Strict`).
 - Telas e ações escondidas por permissão; acesso direto a rota sem permissão mostra "Acesso negado".
 - Divisão por rota (lazy) com chunk `vendor` separado.
 
@@ -67,20 +67,9 @@ As 11 tasks recebidas da API (01 a 11) foram concluídas e conferidas no código
 
 **Convenção (desde 10/10/2026):** mudança que a **API** precisa fazer vira task em `../bem-te-vi-api/docs/changes/` (índice `00-indice.md` lá); mudança que o **front** precisa fazer vira task em `docs/changes/` deste repositório. A numeração é uma só nos dois. As duas pastas ficam fora do git.
 
-**Tasks do front abertas:** 20, segurança do front antes de produção (cabeçalhos e CSP na hospedagem, fonte sem Google Fonts, sessão em computador compartilhado, logout de verdade, lint e CI). Ver `docs/changes/00-indice.md`.
+**Tasks do front abertas** (`docs/changes/00-indice.md`): 20 (segurança do front), 22 a 28 (o que falta no front depois das entregas da API). Feita: 21 (sessão, 14/10/2026).
 
-**Pedidos do front abertos na API** (situação de cada um em `../bem-te-vi-api/docs/changes/00-indice.md`). A coluna da direita é o que o front faz quando a API entregar:
-
-| # | Pedido | Depois, no front |
-|---|---|---|
-| 12 | Busca de pacientes também pelo telefone | Trocar os textos para "nome, CPF ou telefone" (`PatientSearch`, lista de pacientes, Início, `PatientPicker`) |
-| 13 | Permissão `appointments:attend` (quem atende) | Duração padrão só para quem atende (`UserDialog`, Minha conta), rótulo em `permissionGroups.ts`, aviso de papel sem agenda |
-| 14 | Validação do cadastro de clínica | Atualizar `cadastro-de-clinica-na-landing.md`; trocar o regex do subdomínio em Configurações se o formato mudar |
-| 15 | Links de email com subdomínio em dev | Remover o modo `?tenant=` de `brandingHost.ts` e atualizar README, `.env.example` e CLAUDE.md |
-| 16 | Nome do paciente na auditoria | Mostrar o nome (e "removido") na tela de Auditoria |
-| 17 | Encerramentos no painel da plataforma | Filtro, ordenação e data de liberação na lista de Clínicas |
-| 18 | Configurações de tela (`/configs`), começando pelo layout do Início | Testar salvar, restaurar e leitura por quem não edita (Configurações › Tela inicial); tirar o aviso de rota indisponível |
-| 19 | Revisão de segurança | "Sair" chamando o logout da API, renovação de token se houver, CSP na hospedagem |
+**Pedidos do front à API:** 12 a 19 entregues pela API em 14/10/2026; o que faltava no front virou as tasks 21 a 27 (e a 12 só precisa trocar os textos da busca para "nome, CPF ou telefone"). Aberta na API: 29 (assinatura das clínicas pelo Asaas, sem efeito no front por enquanto).
 
 **Recebidas da API (concluídas):**
 
@@ -105,7 +94,7 @@ As 11 tasks recebidas da API (01 a 11) foram concluídas e conferidas no código
 3. Landing page do produto: **fora deste repositório** (decidido em 10/10/2026). Ela faz o cadastro de clínicas; o contrato e as regras estão em [`cadastro-de-clinica-na-landing.md`](cadastro-de-clinica-na-landing.md).
 4. Testes automatizados (nenhum existe).
 5. Build/deploy de produção: não há configuração de hospedagem nem de fallback de SPA (ver [`arquitetura.md`](arquitetura.md#build-e-deploy)). Incluir os cabeçalhos de segurança e a CSP da task 20 (`docs/changes/20-seguranca-do-front.md`).
-6. **Pedidos para a API (12 a 19):** ver a tabela em "Tasks da API" acima. Os mais urgentes antes de produção: 19 (segurança) e 14 (validação do cadastro, antes da landing).
+6. **Tasks do front 22 a 28** (vindas das entregas da API, ver `docs/changes/00-indice.md`) e os textos da busca por telefone (pedido 12, já entregue pela API).
 
 ## Limitações e bugs conhecidos
 
@@ -123,7 +112,7 @@ As 11 tasks recebidas da API (01 a 11) foram concluídas e conferidas no código
 - **Mensagem do 400 de versão desatualizada** continua visível no convite depois que o aceite é desmarcado; some no próximo envio.
 - **Cache HTTP da marca pública (60 s):** o front contorna atualizando o cache local (`applyBrandingToCache`) depois de salvar; em outra aba ou dispositivo a marca nova pode levar até 1 min.
 - **Datas "de hoje" em UTC na API:** perto da meia-noite, uma cobrança pode aparecer como atrasada antes da hora (seção 14 das regras).
-- **Sem refresh token:** a sessão dura 1 dia e então pede novo login.
+- **Sessão:** cai com 12 h sem uso ou 24 h depois do login, e ao fechar o navegador. **Domínio próprio de clínica em produção** precisa da API servida em `<domínio>/api` (cookie `SameSite=Strict`), senão a sessão cai a cada 15 min: pendente com o deploy.
 - **Rate limit de 5/min** no login e fluxos de senha: testes manuais repetidos esbarram em "Muitas tentativas".
 - **Labels do MUI em campos não controlados:** após `setValue`/`reset`, o label pode sobrepor o valor. Padrão adotado: `slotProps.inputLabel.shrink`, `key` de remontagem ou `Controller`.
 
