@@ -24,6 +24,7 @@ import { ErrorMessages } from '@/components/ErrorMessages';
 import { formatDateTime, formatTime } from '@/lib/format';
 import { AppointmentDialog } from '@/pages/schedule/AppointmentDialog';
 import { STATUS_COLORS, STATUS_LABELS } from '@/pages/schedule/status';
+import { canCreateAppointments } from '@/pages/schedule/permissions';
 
 type DialogState = { appointment: Appointment } | { create: true } | null;
 
@@ -42,7 +43,7 @@ export function PatientAppointmentsTab({ patient }: { patient: Patient }) {
     queryFn: () => appointmentsApi.listAll(tenantId, params),
   });
 
-  const newButton = can('appointments:write') && (
+  const newButton = canCreateAppointments(can) && (
     <Button variant="contained" startIcon={<EventOutlined />} onClick={() => setDialog({ create: true })}>
       Novo agendamento
     </Button>

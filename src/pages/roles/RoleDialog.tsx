@@ -27,7 +27,7 @@ import { useAuth, useTenantId } from '@/auth/AuthContext';
 import { ADMIN_PERMISSIONS, rolePermissionKeys } from '@/auth/privileges';
 import { ErrorMessages } from '@/components/ErrorMessages';
 import { useNotify } from '@/components/notifications/NotificationContext';
-import { groupCatalog, togglePermission } from './permissionGroups';
+import { groupCatalog, hasNoAgenda, togglePermission } from './permissionGroups';
 
 interface FormValues {
   name: string;
@@ -207,6 +207,13 @@ export function RoleDialog({ role, readOnly, onClose }: RoleDialogProps) {
               </FormHelperText>
             )}
           </Box>
+
+          {hasNoAgenda(selected) && (
+            <Alert severity="warning">
+              Este papel vê a agenda, mas não tem nenhuma para ver: sem "todas as agendas" ele só veria a própria, e sem
+              "atende pacientes" não tem agenda própria. Marque uma das duas, ou tire a agenda do papel.
+            </Alert>
+          )}
 
           {losingOwnAccess && !readOnly && (
             <Alert severity="warning">

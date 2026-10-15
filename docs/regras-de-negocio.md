@@ -196,7 +196,8 @@ Recomendação: chamar `/auth/me` ao abrir o app (com token salvo) e ao voltar o
 | `patients:read` | Ver pacientes, fichas de anamnese e **listar/ler formulários de anamnese** |
 | `patients:write` | Criar/editar/remover/restaurar pacientes, **ver removidos**, preencher anamnese |
 | `appointments:read` | Ver a **própria** agenda (agendamentos em que o usuário é o profissional) |
-| `appointments:write` | Criar/editar/cancelar agendamentos da **própria** agenda; ajustar a própria duração padrão de atendimento |
+| `appointments:write` | Criar/editar/cancelar agendamentos da **própria** agenda |
+| `appointments:attend` | **Atende pacientes:** tem agenda própria, pode ser o profissional de um agendamento e ajusta a própria duração padrão. Independente das outras (médico: `attend` + `read` + `write`; recepção: `read` + `write` + `all`). Desde 14/10/2026 (task 13 da API) |
 | `appointments:all` | Estende `read`/`write` à agenda de **todos** os profissionais (recepção, dono). Ver seção 10.0 |
 | `users:manage` | Listar/criar/editar usuários do tenant |
 | `roles:manage` | Listar/criar/editar/apagar papéis |
@@ -329,7 +330,7 @@ Rotas sob `/tenants/:tenantId/users`.
 | Editar | `PATCH /users/:id` |
 | Redefinir senha de outro usuário | `PATCH /users/:id/password` |
 | Reenviar convite | `POST /users/:id/invite` |
-| Ajustar a própria duração | `PATCH /users/me/appointment-settings` (exige só `appointments:write`) |
+| Ajustar a própria duração | `PATCH /users/me/appointment-settings` (exige `appointments:attend`) |
 
 **Criar:**
 
@@ -358,11 +359,11 @@ Regras:
 - Não vale para si mesmo (`400`): a própria senha se troca em `PATCH /auth/me/password`, que exige a senha atual.
 - Não vale para usuário "acima" do ator (`403`, seção 4.3).
 
-**Ajuste da própria duração:** `PATCH /users/me/appointment-settings` com `{ "defaultAppointmentDurationMinutes": 50 }` ou `null`. Qualquer profissional com `appointments:write` pode usar (tela "Minhas preferências").
+**Ajuste da própria duração:** `PATCH /users/me/appointment-settings` com `{ "defaultAppointmentDurationMinutes": 50 }` ou `null`. Exige `appointments:attend` (sem ela, `403`); tela Minha conta, que só mostra a seção a quem atende. `GET /users` e `GET /users/:id` trazem `attendsPatients` (o papel tem `attend`), que o formulário de usuário usa para mostrar ou não a duração.
 
 ### 6.1 Lista de profissionais (para agendar)
 
-`GET /tenants/:tenantId/professionals` — exige só **`appointments:read`** (a recepção consegue usar sem `users:manage`).
+`GET /tenants/:tenantId/professionals` — exige só **`appointments:read`** (a recepção consegue usar sem `users:manage`). Só usuários **ativos com `appointments:attend`**.
 
 ```json
 [
@@ -547,7 +548,7 @@ Para um usuário **sem** `appointments:all`:
 | `GET/PATCH/DELETE /appointments/:id` de outro profissional | `404` |
 | `POST /appointments` com `professionalId` de outro | `403` |
 | `PATCH` mudando `professionalId` para outro | `403` |
-| `GET /professionals` | Só ele mesmo (array com 1 item) |
+| `GET /professionals` | Só ele mesmo, se atende (`appointments:attend`); senão, lista vazia |
 
 Com `appointments:all`, tudo funciona sem restrição. O papel Admin de clínica nova já nasce com `appointments:all`; na migração, todo papel que tinha `appointments:read` ganhou `appointments:all`.
 
@@ -563,7 +564,7 @@ Com `appointments:all`, tudo funciona sem restrição. O papel Admin de clínica
 
 Toda resposta de agendamento (criar, listar, detalhe, editar) traz `patient` e `professional` com o nome, sem precisar de outra chamada.
 
-"Profissional" é **qualquer usuário ativo** do tenant (não há flag de profissional). Para o seletor, use `GET /tenants/:tenantId/professionals` (seção 6.1).
+"Profissional" é usuário ativo com **`appointments:attend`** (até 13/10/2026, era qualquer usuário ativo). `POST` (ou `PATCH` trocando o profissional) com quem não atende: `400` "Este usuário não atende pacientes". Agendamentos antigos de quem perdeu a permissão continuam editáveis, sem trocar o profissional. Para o seletor, use `GET /tenants/:tenantId/professionals` (seção 6.1).
 
 ### 10.2 Criar
 
@@ -741,7 +742,7 @@ Só para usuários da clínica-plataforma (criados por script, nunca por signup)
 | Papéis e permissões | `/roles`, `GET /permissions` | `roles:manage` |
 | Configurações da clínica (dados, durações, marca, domínio) | `/tenants/:id`, `/branding`, `/domain` | `tenant:manage` |
 | Minha conta (trocar senha) | `GET /auth/me`, `PATCH /auth/me/password` | qualquer usuário |
-| Minhas preferências (duração padrão) | `PATCH /users/me/appointment-settings` | `appointments:write` |
+| Minhas preferências (duração padrão) | `PATCH /users/me/appointment-settings` | `appointments:attend` |
 | Auditoria (`/auditoria`) e aba "Histórico de acessos" da ficha | `GET /audit-logs` | `audit:read` |
 | Configurações › Encerrar conta (exportar tudo, pedir e cancelar) + aviso em todas as telas | `/tenants/:id/export`, `/tenants/:id/closure` | `tenant:manage` (+ `patients:export` para exportar) |
 | Backoffice: clínicas (com exclusão definitiva) | `/platform/tenants` | `platform:manage` |
@@ -773,7 +774,7 @@ export interface ApiError { statusCode: number; error: string; message: string |
 
 export type PermissionKey =
   | 'patients:read' | 'patients:write'
-  | 'appointments:read' | 'appointments:write'
+  | 'appointments:read' | 'appointments:write' | 'appointments:all' | 'appointments:attend'
   | 'users:manage' | 'roles:manage' | 'tenant:manage'
   | 'anamnesis_templates:manage'
   | 'billing:read' | 'billing:write'
@@ -817,6 +818,7 @@ export type UserStatus = 'active' | 'invited' | 'disabled';
 export interface User {
   id: UUID; tenantId: UUID; roleId: UUID; name: string; email: string; status: UserStatus;
   defaultAppointmentDurationMinutes: number | null; lastLoginAt: ISODateTime | null;
+  attendsPatients: boolean; // o papel tem appointments:attend
   createdAt: ISODateTime; updatedAt: ISODateTime;
 }
 export interface Professional {

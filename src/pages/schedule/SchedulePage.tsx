@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router';
 import {
+  Alert,
   Box,
   Button,
   Checkbox,
@@ -46,6 +47,7 @@ import {
 import { AgendaList } from './AgendaList';
 import { AppointmentDialog, type AppointmentDraft } from './AppointmentDialog';
 import { MonthGrid } from './MonthGrid';
+import { canCreateAppointments, hasAnyAgenda } from './permissions';
 import { ACTIVE_STATUSES, ALL_STATUSES, professionalColor } from './status';
 import { TimeGrid, type GridColumn } from './TimeGrid';
 
@@ -124,7 +126,8 @@ export function SchedulePage() {
 
   const items = appointments.data ?? [];
   const today = new Date();
-  const canWrite = can('appointments:write');
+  // Os atalhos de criação (botão, clique na grade) exigem um profissional possível.
+  const canWrite = canCreateAppointments(can);
   const showProfessional = !professionalId;
 
   // Colunas: por profissional (dia, todos) ou por dia (semana / um profissional).
@@ -308,6 +311,13 @@ export function SchedulePage() {
           />
         </Stack>
       </Stack>
+
+      {!hasAnyAgenda(can) && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          Você não atende pacientes, então não tem agenda própria, e seu papel não vê a agenda dos outros
+          profissionais. Se isso estiver errado, peça ao administrador para ajustar seu papel em Papéis e permissões.
+        </Alert>
+      )}
 
       <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
         <Box sx={{ height: 4 }}>{appointments.isFetching && <LinearProgress />}</Box>

@@ -7,7 +7,7 @@ export interface ApiError { statusCode: number; error: string; message: string |
 
 export type PermissionKey =
   | 'patients:read' | 'patients:write'
-  | 'appointments:read' | 'appointments:write' | 'appointments:all'
+  | 'appointments:read' | 'appointments:write' | 'appointments:all' | 'appointments:attend'
   | 'users:manage' | 'roles:manage' | 'tenant:manage'
   | 'anamnesis_templates:manage'
   | 'billing:read' | 'billing:write'
@@ -47,6 +47,8 @@ export type UserStatus = 'active' | 'invited' | 'disabled';
 export interface User {
   id: UUID; tenantId: UUID; roleId: UUID; name: string; email: string; status: UserStatus;
   defaultAppointmentDurationMinutes: number | null; lastLoginAt: ISODateTime | null;
+  /** O papel tem `appointments:attend` (só leitura, calculado pela API). */
+  attendsPatients: boolean;
   createdAt: ISODateTime; updatedAt: ISODateTime;
 }
 export interface Professional {

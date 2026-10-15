@@ -28,7 +28,7 @@ export function MyAccountPage() {
           <ChangePasswordForm />
         </SectionCard>
 
-        {can(['appointments:read', 'appointments:write']) && (
+        {can('appointments:attend') && (
           <SectionCard
             title="Preferências de atendimento"
             description="Duração usada para calcular o fim dos seus agendamentos quando só o início é informado."

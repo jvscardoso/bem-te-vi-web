@@ -84,12 +84,21 @@ export function UserDialog({ user, roles, readOnly, onClose, onResetPassword }: 
   const roleId = useWatch({ control, name: 'roleId' });
   const status = useWatch({ control, name: 'status' });
   const access = useWatch({ control, name: 'access' });
+  // A duração própria só vale para quem atende (`appointments:attend`). Com a lista de papéis
+  // (roles:manage), segue o papel escolhido no formulário; sem ela, o que a API diz do usuário.
+  // Na criação sem a lista, mostra: a API aceita e ignora para quem não atende.
+  const selectedRole = roles?.find((role) => role.id === roleId);
+  const attends = selectedRole
+    ? selectedRole.permissions.some(({ permission }) => permission.key === 'appointments:attend')
+    : (user?.attendsPatients ?? true);
   // Convidado só fica ativo aceitando o convite; para os demais, "convidado" não é uma opção.
   const statusOptions: UserStatus[] = user?.status === 'invited' ? ['invited', 'disabled'] : ['active', 'disabled'];
 
   const save = useMutation({
     mutationFn: (values: FormValues) => {
-      const duration = values.duration.trim() === '' ? null : Number(values.duration);
+      // O campo de duração sai do formulário (shouldUnregister) quando o papel não atende.
+      const durationText = values.duration?.trim() ?? '';
+      const duration = durationText === '' ? null : Number(durationText);
       if (!user) {
         return usersApi.create(tenantId, {
           name: values.name.trim(),
@@ -97,7 +106,7 @@ export function UserDialog({ user, roles, readOnly, onClose, onResetPassword }: 
           // Sem senha, a API cria o usuário como convidado e envia o convite por email.
           ...(values.access === 'password' && { password: values.password }),
           roleId: values.roleId,
-          ...(duration !== null && { defaultAppointmentDurationMinutes: duration }),
+          ...(attends && duration !== null && { defaultAppointmentDurationMinutes: duration }),
         });
       }
       const update: UserUpdateInput = {};
@@ -105,7 +114,7 @@ export function UserDialog({ user, roles, readOnly, onClose, onResetPassword }: 
       if (dirtyFields.email) update.email = values.email.trim();
       if (dirtyFields.roleId) update.roleId = values.roleId;
       if (dirtyFields.status) update.status = values.status;
-      if (dirtyFields.duration) update.defaultAppointmentDurationMinutes = duration;
+      if (attends && dirtyFields.duration) update.defaultAppointmentDurationMinutes = duration;
       return usersApi.update(tenantId, user.id, update);
     },
     onSuccess: (saved) => {
@@ -239,32 +248,35 @@ export function UserDialog({ user, roles, readOnly, onClose, onResetPassword }: 
             />
           )}
 
-          <Controller
-            name="duration"
-            control={control}
-            rules={{
-              validate: (value) =>
-                value.trim() === '' ||
-                (/^\d+$/.test(value) && Number(value) >= 5 && Number(value) <= 1440) ||
-                'Informe um número entre 5 e 1440, ou deixe em branco',
-            }}
-            render={({ field, fieldState }) => (
-              <TextField
-                label="Duração padrão de atendimento"
-                placeholder="Padrão da clínica"
-                {...field}
-                inputRef={field.ref}
-                disabled={readOnly}
-                error={!!fieldState.error}
-                helperText={fieldState.error?.message ?? 'Deixe em branco para usar o padrão da clínica.'}
-                slotProps={{
-                  inputLabel: { shrink: true },
-                  htmlInput: { inputMode: 'numeric' },
-                  input: { endAdornment: <InputAdornment position="end">min</InputAdornment> },
-                }}
-              />
-            )}
-          />
+          {attends && (
+            <Controller
+              name="duration"
+              control={control}
+              shouldUnregister
+              rules={{
+                validate: (value) =>
+                  value.trim() === '' ||
+                  (/^\d+$/.test(value) && Number(value) >= 5 && Number(value) <= 1440) ||
+                  'Informe um número entre 5 e 1440, ou deixe em branco',
+              }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  label="Duração padrão de atendimento"
+                  placeholder="Padrão da clínica"
+                  {...field}
+                  inputRef={field.ref}
+                  disabled={readOnly}
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message ?? 'Deixe em branco para usar o padrão da clínica.'}
+                  slotProps={{
+                    inputLabel: { shrink: true },
+                    htmlInput: { inputMode: 'numeric' },
+                    input: { endAdornment: <InputAdornment position="end">min</InputAdornment> },
+                  }}
+                />
+              )}
+            />
+          )}
 
           {!user && (
             <Controller

@@ -8,7 +8,7 @@ export interface PermissionGroup {
 /** Agrupamento por área para o editor de papéis (chaves fora da lista caem em "Outras"). */
 export const PERMISSION_GROUPS: PermissionGroup[] = [
   { title: 'Pacientes', keys: ['patients:read', 'patients:write', 'patients:export'] },
-  { title: 'Agenda', keys: ['appointments:read', 'appointments:write', 'appointments:all'] },
+  { title: 'Agenda', keys: ['appointments:read', 'appointments:write', 'appointments:attend', 'appointments:all'] },
   { title: 'Financeiro', keys: ['billing:read', 'billing:write'] },
   { title: 'Anamnese', keys: ['anamnesis_templates:manage'] },
   { title: 'Administração', keys: ['users:manage', 'roles:manage', 'tenant:manage', 'audit:read'] },
@@ -25,6 +25,14 @@ const REQUIRES_READ: Partial<Record<PermissionKey, PermissionKey>> = {
   'appointments:all': 'appointments:read',
   'billing:write': 'billing:read',
 };
+
+/**
+ * Papel que vê a agenda mas não tem nenhuma para ver: sem `appointments:all` a agenda é só a
+ * própria, e sem `appointments:attend` não há agenda própria. A API aceita; a tela avisa.
+ */
+export function hasNoAgenda(keys: PermissionKey[]): boolean {
+  return keys.includes('appointments:read') && !keys.includes('appointments:all') && !keys.includes('appointments:attend');
+}
 
 export function togglePermission(selected: PermissionKey[], key: PermissionKey, checked: boolean): PermissionKey[] {
   const next = new Set(selected);

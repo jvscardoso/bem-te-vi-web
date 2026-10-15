@@ -9,6 +9,7 @@ import { ErrorMessages } from '@/components/ErrorMessages';
 import { formatLongDate } from '@/lib/dates';
 import { ChargeDialog } from '@/pages/billing/ChargeDialog';
 import { AppointmentDialog } from '@/pages/schedule/AppointmentDialog';
+import { canCreateAppointments } from '@/pages/schedule/permissions';
 import { HomeGrid } from './HomeGrid';
 import { useHomeLayout } from './useHomeLayout';
 import { HOME_WIDGETS } from './widgets';
@@ -32,7 +33,7 @@ export function HomePage() {
   const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
 
   const actions = [
-    can('appointments:write') && (
+    canCreateAppointments(can) && (
       <Button key="appointment" variant="contained" startIcon={<EventOutlined />} onClick={() => setDialog('appointment')}>
         Novo agendamento
       </Button>
