@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Alert, Box, Button, InputAdornment, Stack, TextField } from '@mui/material';
+import { Box, Button, Chip, InputAdornment, Stack, TextField } from '@mui/material';
 import { tenantKeys, tenantsApi, type TenantUpdate } from '@/api/tenants';
 import type { Tenant } from '@/api/types';
 import { ErrorMessages } from '@/components/ErrorMessages';
@@ -10,18 +10,11 @@ import { useNotify } from '@/components/notifications/NotificationContext';
 import { applyFieldErrors } from '@/lib/errors';
 import { muiField } from '@/lib/form';
 import { applyBrandingToCache } from '@/theme/brandingCache';
-import { devClinicUrl } from '@/theme/brandingHost';
 
 const APP_BASE_DOMAIN = import.meta.env.VITE_APP_BASE_DOMAIN?.trim() || null;
 
-// Rótulo DNS, como a API exige: sem hífen no começo nem no fim. Os reservados (`admin`, `www`…)
-// são conferidos só pela API (409 "Este subdomínio não está disponível"), porque a lista varia
-// por ambiente.
-const SUBDOMAIN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
-
 interface FormValues {
   name: string;
-  subdomain: string;
 }
 
 export function GeneralTab({ tenant }: { tenant: Tenant }) {
@@ -30,37 +23,25 @@ export function GeneralTab({ tenant }: { tenant: Tenant }) {
 
   const {
     register,
-    control,
     handleSubmit,
     setError,
-    formState: { errors, isDirty, dirtyFields },
-  } = useForm<FormValues>({ defaultValues: { name: tenant.name, subdomain: tenant.subdomain } });
+    formState: { errors, isDirty },
+  } = useForm<FormValues>({ defaultValues: { name: tenant.name } });
   // O que sobra para a área de erros depois de pôr os erros por campo nos campos.
   const [areaError, setAreaError] = useState<unknown>(null);
-  const subdomain = useWatch({ control, name: 'subdomain' });
-  const subdomainChanged = subdomain !== tenant.subdomain;
 
   const save = useMutation({
     mutationFn: (values: FormValues) => {
-      const input: TenantUpdate = {};
-      if (dirtyFields.name) input.name = values.name.trim();
-      if (dirtyFields.subdomain) input.subdomain = values.subdomain;
+      const input: TenantUpdate = { name: values.name.trim() };
       return tenantsApi.update(tenant.id, input);
     },
     onMutate: () => setAreaError(null),
-    // 400 de formato vai para o campo; o 409 ("já está em uso", "não está disponível") fica na área.
-    onError: (error) => setAreaError(applyFieldErrors(error, setError, ['name', 'subdomain'])),
+    onError: (error) => setAreaError(applyFieldErrors(error, setError, ['name'])),
     onSuccess: (saved) => {
       // O nome aparece na marca pública (login, menu, título da aba).
       applyBrandingToCache(queryClient, tenant.name, { name: saved.name });
       queryClient.setQueryData(tenantKeys.detail(tenant.id), (old?: Tenant) => ({ ...old, ...saved }));
       notify('Dados da clínica atualizados.');
-
-      // Em dev, leva ao endereço novo (em *.localhost é outra origem: a sessão fica para trás e
-      // pede login, como em produção).
-      if (saved.subdomain !== tenant.subdomain && import.meta.env.DEV) {
-        window.location.assign(devClinicUrl(saved.subdomain, '/configuracoes'));
-      }
     },
   });
 
@@ -77,33 +58,24 @@ export function GeneralTab({ tenant }: { tenant: Tenant }) {
             errors.name,
           )}
         />
+        {/* Trocar o subdomínio derruba o endereço que a equipe e os pacientes já usam (links de
+            email, favoritos, sessão aberta) e exige redirecionar o antigo: fica para depois. */}
         <TextField
           label="Endereço de acesso (subdomínio)"
-          {...muiField(
-            register('subdomain', {
-              setValueAs: (value: string) => value.trim().toLowerCase(),
-              validate: (value) =>
-                !value
-                  ? 'Informe o subdomínio'
-                  : value.length > 63
-                    ? 'Máximo de 63 caracteres'
-                    : SUBDOMAIN.test(value) ||
-                      'Use letras minúsculas, números e hífen, sem hífen no começo nem no fim',
-            }),
-            errors.subdomain,
-          )}
-          slotProps={
-            APP_BASE_DOMAIN
-              ? { input: { endAdornment: <InputAdornment position="end">.{APP_BASE_DOMAIN}</InputAdornment> } }
-              : undefined
-          }
+          value={tenant.subdomain}
+          disabled
+          helperText="A troca do endereço de acesso ainda não está disponível."
+          slotProps={{
+            input: {
+              endAdornment: (
+                <InputAdornment position="end" sx={{ gap: 1 }}>
+                  {APP_BASE_DOMAIN && `.${APP_BASE_DOMAIN}`}
+                  <Chip size="small" color="info" variant="outlined" label="Em breve" />
+                </InputAdornment>
+              ),
+            },
+          }}
         />
-        {subdomainChanged && (
-          <Alert severity="warning">
-            O endereço de acesso da clínica vai mudar. O endereço atual deixa de funcionar e toda a equipe precisará
-            usar o novo{APP_BASE_DOMAIN ? `: ${subdomain || '…'}.${APP_BASE_DOMAIN}` : '.'}
-          </Alert>
-        )}
       </SectionCard>
 
       <ErrorMessages error={areaError} />

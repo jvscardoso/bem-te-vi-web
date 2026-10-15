@@ -28,6 +28,7 @@ import { ListPagination } from '@/components/ListPagination';
 import { PageHeader } from '@/components/PageHeader';
 import { SearchField } from '@/components/SearchField';
 import { useNotify } from '@/components/notifications/NotificationContext';
+import { TableSkeletonRows } from '@/components/TableSkeletonRows';
 import { formatDate } from '@/lib/format';
 import { DeleteTenantDialog } from './DeleteTenantDialog';
 import { useListSearchParams } from '@/lib/useListSearchParams';
@@ -156,6 +157,11 @@ export function TenantsPage() {
                 </TableRow>
               </TableHead>
               <TableBody>
+                {query.isPending && (
+                  <TableSkeletonRows
+                    columns={[undefined, hideOnMobile, undefined, hideOnMobile, hideOnMobile, hideOnMobile, undefined]}
+                  />
+                )}
                 {query.data?.data.map((tenant) => {
                   const status = STATUS[tenant.status];
                   const deletionAt = tenant.deletionAvailableAt ? new Date(tenant.deletionAvailableAt).getTime() : null;

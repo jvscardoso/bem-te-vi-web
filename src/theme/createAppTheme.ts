@@ -83,7 +83,7 @@ export function createAppTheme({ primaryColor, secondaryColor, mode = 'light' }:
       },
       shape: { borderRadius: 10 },
       typography: {
-        fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+        fontFamily: '"Inter Variable", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
         button: { textTransform: 'none', fontWeight: 600 },
       },
       components: {

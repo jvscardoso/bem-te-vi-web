@@ -47,7 +47,8 @@ Definido em `src/router.tsx` com `createBrowserRouter`.
 ```
 
 - Permissão de cada rota: ver a tabela do [`status.md`](status.md).
-- **Lazy loading:** todas as páginas, exceto o login, os layouts e os guards, são carregadas sob demanda pelo helper `page(load, name)`, que gera `lazy: () => import(...).then(m => ({ Component: m[name] }))`. `HydrateFallback` mostra o `FullScreenLoader`.
+- **Lazy loading:** todas as páginas, exceto o login, os layouts e os guards, são carregadas sob demanda pelo helper `page(load, name)`, que gera `lazy: () => import(...).then(m => ({ Component: m[name] }))`. `HydrateFallback` mostra o `FullScreenLoader`. Na navegação entre telas, o `RootLayout` (raiz do roteador) mostra o `NavigationProgress`: uma barra no topo enquanto o código da próxima tela baixa (aparece depois de 200 ms, para não piscar).
+- **Erros (`RouteErrorPage`):** `errorElement` na raiz (tela inteira: login, links de email, textos legais) e numa rota sem caminho logo abaixo de cada `ShellLayout` (o erro ocupa só o conteúdo e o menu continua). Erro comum: "Algo deu errado" com Recarregar e Ir para o início (em dev, a mensagem técnica embaixo). Arquivo de tela que não carrega (publicação nova com o app aberto): recarrega sozinho uma vez (`sessionStorage` `btv.chunkReloadAt`, no máximo uma vez a cada 30 s); se continuar faltando, "Nova versão disponível".
 - Estado de tela que vale compartilhar por link (aba da ficha, página e busca das listas, data e visão da agenda) fica na **query string** (`useSearchParams`, `useListSearchParams`).
 
 ## Sessão
@@ -71,8 +72,9 @@ Definido em `src/router.tsx` com `createBrowserRouter`.
 
 - `getBrandingHost()` (`src/theme/brandingHost.ts`) decide o endereço uma vez por carregamento (função interna `resolveBrandingHost`):
   - produção: `window.location.host`;
-  - dev: subdomínio de `localhost` (`clinica-demo.localhost:5173` → manda só `clinica-demo`, que a API trata como subdomínio). `localhost` puro é a marca padrão (backoffice). Por IP (celular na rede local), um IP não tem subdomínio: vale `?tenant=<subdomínio>` (lembrado na aba em `sessionStorage` `btv.devTenant`; `?tenant=` vazio esquece), o mesmo formato dos links de email da API quando o `FRONTEND_URL` dela é um IP. `devClinicUrl()` monta o endereço de outra clínica no modo em uso.
+  - dev: subdomínio de `localhost` (`clinica-demo.localhost:5173` → manda só `clinica-demo`, que a API trata como subdomínio). `localhost` puro é a marca padrão (backoffice). Por IP (celular na rede local), um IP não tem subdomínio: vale `?tenant=<subdomínio>` (lembrado na aba em `sessionStorage` `btv.devTenant`; `?tenant=` vazio esquece), o mesmo formato dos links de email da API quando o `FRONTEND_URL` dela é um IP. 
 - `BrandingProvider` busca `GET /public/branding?host=` (chave `['public-branding', host]`, `staleTime` 5 min, sem retry em 404), monta o tema MUI com `createAppTheme(cores)`, aplica `CssBaseline` e põe `tradeName ?? name` no `document.title`. `useBranding()` dá `status` (`loading`/`found`/`notFound`/`error`), `displayName` e `logoUrl`. Sem clínica, vale a marca padrão do bem-te-vi.
+- **Endereço da plataforma × de clínica** (`isPlatformAddress()`): a marca pública dá `404` nos dois, então o front decide pelo endereço. São da plataforma (marca padrão, backoffice): em dev, `localhost` puro e IP sem `?tenant=`; em produção, o `VITE_APP_BASE_DOMAIN`, os subdomínios `www`, `app`, `admin`, `backoffice` e `plataforma` dele e os hosts de `VITE_PLATFORM_HOSTS` (sem `VITE_APP_BASE_DOMAIN`, todo endereço conta como da plataforma). Num endereço de clínica, o `BrandingProvider` mostra o `FullScreenLoader` até a marca chegar (sem piscar a marca padrão) e, com `404`, a `AddressNotFoundScreen` ("Endereço não encontrado": clínica inexistente, excluída, suspensa ou domínio próprio não verificado) no lugar do app inteiro. Erro de rede segue com a marca padrão.
 - **Modo claro/escuro** (`src/theme/colorMode.ts`): `useColorModeState` lê `localStorage` `btv.colorMode` antes do primeiro render (sem piscar) e, sem escolha salva, acompanha `prefers-color-scheme`. O `BrandingProvider` passa o modo para `createAppTheme` e expõe `useColorMode()` (`mode`, `setMode`). Não usamos as variáveis CSS do MUI (`colorSchemes`) porque a pré-visualização de marca usa um `ThemeProvider` aninhado.
   - No escuro, `createAppTheme` clareia as cores da clínica até um contraste mínimo com o fundo (`readableOnDark`).
   - `contrastThreshold: 4.5`: o texto sobre a cor da clínica (preto ou branco) segue o critério AA nos dois modos.
@@ -134,9 +136,12 @@ Definido em `src/router.tsx` com `createBrowserRouter`.
 - **MUI 9:** props de input via `slotProps` (`input`, `htmlInput`, `inputLabel`). Em Radio/Checkbox, ref por `slotProps.input.ref`. Depois de `reset`/`setValue` em campo não controlado, forçar `slotProps.inputLabel.shrink` (ou usar `Controller`/`key`) para o label não sobrepor o valor.
 - **Diálogos de criação/edição** (`XxxDialog.tsx`) recebem o item (ou nada, para criar) e fecham no sucesso com `useNotify()`; ações destrutivas passam por `ConfirmDialog`.
 - **Listas:** `PageHeader` + `SearchField` (debounce) + tabela/cards + `ListPagination`, com página e busca na URL. Estados de carregando, vazio (`EmptyState`) e erro (`ErrorMessages`) sempre tratados.
+- **Carregamento:** no primeiro carregamento de uma lista (`query.isPending`), `TableSkeletonRows` dentro do `TableBody`, com o `sx` de cada coluna igual ao do cabeçalho (as escondidas no celular somem também); nas atualizações seguintes, a barra fina (`LinearProgress` com `isFetching`) sobre a lista que já está na tela. Telas de detalhe e blocos usam `Skeleton` no formato do conteúdo. Botão que dispara mutação usa `loading={mutation.isPending}`.
 - **Responsivo:** `useMediaQuery` no menu (gaveta temporária no celular), nos diálogos (tela cheia no celular) e na agenda (lista no celular, grade no desktop); layouts com `sx` responsivo (`xs`/`sm`).
 - **React Compiler (lint):** nada impuro no render (`Date.now()` vai em `useState(() => Date.now())`), `useWatch` em vez de `watch`, hooks e componentes em arquivos separados quando o `react-refresh` pede.
 - Textos da interface em português; código (nomes) em inglês; comentários em português.
+- **Sem HTML cru:** o lint (`no-restricted-syntax` no `eslint.config.js`) proíbe `dangerouslySetInnerHTML`, atribuir `innerHTML`/`outerHTML`, `insertAdjacentHTML` e `document.write`. O React já escapa todo texto; se um dia for preciso renderizar HTML, sanitizar com DOMPurify e liberar a regra só naquele arquivo, com o motivo.
+- **Fonte:** Inter variável servida pelo próprio app (`@fontsource-variable/inter`, importada no `main.tsx`; família `"Inter Variable"` no tema). Não use Google Fonts nem outra CDN de fonte: mandaria o IP de cada usuário a terceiros (LGPD) e a CSP teria de liberar o domínio.
 
 ## Testes
 
@@ -145,5 +150,6 @@ Não há testes automatizados nem ferramenta de teste instalada. A verificação
 ## Build e deploy
 
 - `npm run build` = `tsc -b && vite build` → `dist/`. Vite 8 (Rolldown) com o grupo `vendor` (react, react-dom, scheduler, react-router, @tanstack) num arquivo estável; o MUI fica na divisão automática por rota.
-- Variáveis (`.env.example`): `VITE_API_URL` (em dev, `/api`, pelo proxy do Vite) e `VITE_APP_BASE_DOMAIN` (domínio das clínicas, usado para mostrar o endereço em Configurações e no backoffice).
+- A fonte vai no `dist/assets` (um `.woff2` por conjunto de caracteres; o navegador só baixa o que a página usa, normalmente o latino). Com isso, a CSP do deploy pode usar `font-src 'self'` (task 20).
+- Variáveis (`.env.example`): `VITE_API_URL` (em dev, `/api`, pelo proxy do Vite), `VITE_APP_BASE_DOMAIN` (domínio das clínicas: endereço mostrado em Configurações e no backoffice, e separação entre endereço de clínica e da plataforma) e `VITE_PLATFORM_HOSTS` (hosts extras da plataforma; ver Marca da clínica).
 - **Deploy ainda não configurado.** Requisitos: servir `dist/` como SPA (toda rota desconhecida devolve `index.html`, inclusive `/reset-password` e `/accept-invite`), responder em `*.<APP_BASE_DOMAIN>` e nos domínios próprios verificados, e a API com `FRONTEND_URL`/CORS apontando para o front.

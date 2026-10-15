@@ -165,7 +165,7 @@ export function BillingPage() {
             description={filtered ? 'Ajuste os filtros para ver outras cobranças.' : undefined}
           />
         ) : (
-          query.data && <ChargesTable charges={query.data.data} />
+          <ChargesTable charges={query.data?.data ?? []} loading={query.isPending} />
         )}
 
         {query.data && query.data.meta.total > 0 && (

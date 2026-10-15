@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { CssBaseline, ThemeProvider } from '@mui/material';
 import { publicApi } from '@/api/auth';
+import { AddressNotFoundScreen } from '@/components/AddressNotFoundScreen';
+import { FullScreenLoader } from '@/components/FullScreenLoader';
 import { isApiError } from '@/lib/errors';
 import { BrandingContext, type BrandingContextValue } from './BrandingContext';
-import { getBrandingHost } from './brandingHost';
+import { getBrandingHost, isPlatformAddress } from './brandingHost';
 import { ColorModeContext, useColorModeState } from './colorMode';
 import { createAppTheme } from './createAppTheme';
 
@@ -12,6 +14,7 @@ const PRODUCT_NAME = 'bem-te-vi';
 
 export function BrandingProvider({ children }: { children: ReactNode }) {
   const [host] = useState(getBrandingHost);
+  const [platformAddress] = useState(isPlatformAddress);
 
   const query = useQuery({
     queryKey: ['public-branding', host],
@@ -50,8 +53,15 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    document.title = value.displayName;
-  }, [value.displayName]);
+    document.title = value.status === 'notFound' && !platformAddress ? 'Endereço não encontrado' : value.displayName;
+  }, [value.displayName, value.status, platformAddress]);
+
+  // Endereço de clínica: espera a marca em vez de mostrar a do bem-te-vi e trocar em seguida, e
+  // sem clínica ativa nele não há o que abrir (o login falharia sem explicar por quê). Erro de
+  // rede ou da API segue com a marca padrão, como antes.
+  let content = children;
+  if (!platformAddress && value.status === 'loading') content = <FullScreenLoader />;
+  else if (!platformAddress && value.status === 'notFound') content = <AddressNotFoundScreen />;
 
   return (
     <BrandingContext.Provider value={value}>
@@ -59,7 +69,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
         <ThemeProvider theme={theme}>
           {/* enableColorScheme: campos nativos (data, hora, rolagem) acompanham o modo escuro. */}
           <CssBaseline enableColorScheme />
-          {children}
+          {content}
         </ThemeProvider>
       </ColorModeContext.Provider>
     </BrandingContext.Provider>

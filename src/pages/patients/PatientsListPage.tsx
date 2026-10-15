@@ -23,6 +23,7 @@ import { ErrorMessages } from '@/components/ErrorMessages';
 import { ListPagination } from '@/components/ListPagination';
 import { PageHeader } from '@/components/PageHeader';
 import { SearchField } from '@/components/SearchField';
+import { TableSkeletonRows } from '@/components/TableSkeletonRows';
 import { ageFromBirthDate, formatCpf, formatDate } from '@/lib/format';
 import { useListSearchParams } from '@/lib/useListSearchParams';
 
@@ -111,6 +112,11 @@ export function PatientsListPage() {
                 </TableRow>
               </TableHead>
               <TableBody>
+                {query.isPending && (
+                  <TableSkeletonRows
+                    columns={[undefined, undefined, hideOnMobile, hideOnMobile, hideOnMobile]}
+                  />
+                )}
                 {query.data?.data.map((patient) => {
                   const age = ageFromBirthDate(patient.birthDate);
                   return (

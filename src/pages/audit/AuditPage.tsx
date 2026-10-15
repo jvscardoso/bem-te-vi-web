@@ -35,6 +35,7 @@ import { ErrorMessages } from '@/components/ErrorMessages';
 import { ListPagination } from '@/components/ListPagination';
 import { PageHeader } from '@/components/PageHeader';
 import { PatientPicker, type PatientOption } from '@/components/PatientPicker';
+import { TableSkeletonRows } from '@/components/TableSkeletonRows';
 import { fromDateKey } from '@/lib/dates';
 import { formatDateTime } from '@/lib/format';
 import { PAGE_SIZE_OPTIONS } from '@/lib/useListSearchParams';
@@ -229,6 +230,11 @@ export function AuditPage() {
                 </TableRow>
               </TableHead>
               <TableBody>
+                {query.isPending && (
+                  <TableSkeletonRows
+                    columns={[undefined, undefined, undefined, hideOnMobile, undefined]}
+                  />
+                )}
                 {query.data?.data.map((entry) => {
                   const summary = detailSummary(entry);
                   return (

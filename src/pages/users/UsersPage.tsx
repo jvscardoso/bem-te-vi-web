@@ -27,6 +27,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessages } from '@/components/ErrorMessages';
 import { ListPagination } from '@/components/ListPagination';
 import { PageHeader } from '@/components/PageHeader';
+import { TableSkeletonRows } from '@/components/TableSkeletonRows';
 import { formatDateTime } from '@/lib/format';
 import { ResetPasswordDialog } from './ResetPasswordDialog';
 import { UserDialog } from './UserDialog';
@@ -103,6 +104,11 @@ export function UsersPage() {
                 </TableRow>
               </TableHead>
               <TableBody>
+                {query.isPending && (
+                  <TableSkeletonRows
+                    columns={[undefined, hideOnMobile, undefined, undefined, hideOnMobile]}
+                  />
+                )}
                 {query.data?.data.map((user) => {
                   const status = USER_STATUS[user.status];
                   const above = isAbove(user);

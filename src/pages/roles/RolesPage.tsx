@@ -29,6 +29,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessages } from '@/components/ErrorMessages';
 import { PageHeader } from '@/components/PageHeader';
 import { useNotify } from '@/components/notifications/NotificationContext';
+import { TableSkeletonRows } from '@/components/TableSkeletonRows';
 import { isApiError } from '@/lib/errors';
 import { RoleDialog } from './RoleDialog';
 
@@ -86,6 +87,11 @@ export function RolesPage() {
                 </TableRow>
               </TableHead>
               <TableBody>
+                {query.isPending && (
+                  <TableSkeletonRows
+                    columns={[undefined, { display: { xs: 'none', md: 'table-cell' } }, undefined, undefined]}
+                  />
+                )}
                 {query.data?.map((role) => {
                   const above = isRoleAbove(actorPermissions, role);
                   return (

@@ -1,6 +1,7 @@
 import { Link as RouterLink, useNavigate } from 'react-router';
 import { Chip, Link, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
 import type { Charge } from '@/api/types';
+import { TableSkeletonRows } from '@/components/TableSkeletonRows';
 import { formatCents, formatDate } from '@/lib/format';
 import { chargeDisplayStatus, DISPLAY_STATUS } from './status';
 
@@ -10,9 +11,11 @@ interface ChargesTableProps {
   charges: Charge[];
   /** Esconde a coluna de paciente (na ficha do próprio paciente). */
   hidePatient?: boolean;
+  /** Primeiro carregamento: linhas de esqueleto no lugar das cobranças. */
+  loading?: boolean;
 }
 
-export function ChargesTable({ charges, hidePatient }: ChargesTableProps) {
+export function ChargesTable({ charges, hidePatient, loading }: ChargesTableProps) {
   const navigate = useNavigate();
 
   return (
@@ -31,6 +34,11 @@ export function ChargesTable({ charges, hidePatient }: ChargesTableProps) {
           </TableRow>
         </TableHead>
         <TableBody>
+          {loading && (
+            <TableSkeletonRows
+              columns={[undefined, ...(hidePatient ? [] : [undefined]), hideOnMobile, undefined, hideOnMobile, undefined]}
+            />
+          )}
           {charges.map((charge) => {
             const status = DISPLAY_STATUS[chargeDisplayStatus(charge)];
             const path = `/financeiro/cobrancas/${charge.id}`;

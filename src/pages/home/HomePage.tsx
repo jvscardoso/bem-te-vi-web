@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link as RouterLink } from 'react-router';
-import { Box, Button, Paper, Stack, Typography } from '@mui/material';
+import { Box, Button, Paper, Skeleton, Stack, Typography } from '@mui/material';
 import EventOutlined from '@mui/icons-material/EventOutlined';
 import PaymentsOutlined from '@mui/icons-material/PaymentsOutlined';
 import PersonAddAlt1Outlined from '@mui/icons-material/PersonAddAlt1Outlined';
@@ -72,7 +72,9 @@ export function HomePage() {
       </Stack>
 
       {/* Sem o layout (erro ao ler), vale o padrão: é só a arrumação, e cada bloco mostra o próprio erro. */}
-      {query.isPending ? null : hasVisibleWidget ? (
+      {query.isPending ? (
+        <HomeSkeleton />
+      ) : hasVisibleWidget ? (
         <HomeGrid widgets={widgets} />
       ) : (
         <Paper variant="outlined" sx={{ p: 3 }}>
@@ -85,5 +87,21 @@ export function HomePage() {
       {dialog === 'appointment' && <AppointmentDialog onClose={() => setDialog(null)} />}
       {dialog === 'charge' && <ChargeDialog onClose={() => setDialog(null)} />}
     </>
+  );
+}
+
+/** Enquanto o layout da clínica carrega: a forma de uma tela inicial típica, sem saber os blocos. */
+function HomeSkeleton() {
+  return (
+    <Box
+      aria-hidden
+      sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' } }}
+    >
+      {[0, 1, 2, 3].map((index) => (
+        <Skeleton key={index} variant="rounded" height={112} />
+      ))}
+      <Skeleton variant="rounded" height={220} sx={{ gridColumn: { md: 'span 2' } }} />
+      <Skeleton variant="rounded" height={220} sx={{ gridColumn: { md: 'span 2' } }} />
+    </Box>
   );
 }

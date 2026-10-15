@@ -26,6 +26,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessages } from '@/components/ErrorMessages';
 import { PageHeader } from '@/components/PageHeader';
 import { useNotify } from '@/components/notifications/NotificationContext';
+import { TableSkeletonRows } from '@/components/TableSkeletonRows';
 import { isApiError } from '@/lib/errors';
 import { formatDateTime } from '@/lib/format';
 
@@ -87,6 +88,11 @@ export function TemplatesListPage() {
                 </TableRow>
               </TableHead>
               <TableBody>
+                {query.isPending && (
+                  <TableSkeletonRows
+                    columns={[undefined, undefined, { display: { xs: 'none', sm: 'table-cell' } }, undefined]}
+                  />
+                )}
                 {query.data?.map((template) => (
                   <TableRow key={template.id} hover>
                     <TableCell>

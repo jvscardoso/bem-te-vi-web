@@ -1,3 +1,6 @@
+// Fonte servida pelo próprio app: carregá-la do Google Fonts mandaria o IP de cada usuário ao
+// Google (LGPD) e obrigaria a CSP a liberar outro domínio (task 20).
+import '@fontsource-variable/inter';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router';

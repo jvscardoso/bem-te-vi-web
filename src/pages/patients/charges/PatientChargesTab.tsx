@@ -45,7 +45,7 @@ export function PatientChargesTab({ patient }: { patient: Patient }) {
         ) : query.data?.data.length === 0 ? (
           <EmptyState title="Nenhuma cobrança" description="Este paciente ainda não tem cobranças." action={newButton} />
         ) : (
-          query.data && <ChargesTable charges={query.data.data} hidePatient />
+          <ChargesTable charges={query.data?.data ?? []} loading={query.isPending} hidePatient />
         )}
         {query.data && query.data.meta.total > 0 && (
           <ListPagination

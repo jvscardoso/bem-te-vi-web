@@ -23,6 +23,7 @@ import { ListPagination } from '@/components/ListPagination';
 import { PageHeader } from '@/components/PageHeader';
 import { SearchField } from '@/components/SearchField';
 import { useNotify } from '@/components/notifications/NotificationContext';
+import { TableSkeletonRows } from '@/components/TableSkeletonRows';
 import { formatCpf, formatDateTime } from '@/lib/format';
 import { ExportPatientDialog } from './export/ExportPatientDialog';
 import { useListSearchParams } from '@/lib/useListSearchParams';
@@ -105,6 +106,11 @@ export function RemovedPatientsPage() {
                 </TableRow>
               </TableHead>
               <TableBody>
+                {query.isPending && (
+                  <TableSkeletonRows
+                    columns={[undefined, undefined, { display: { xs: 'none', sm: 'table-cell' } }, undefined]}
+                  />
+                )}
                 {query.data?.data.map((patient) => (
                   <TableRow key={patient.id}>
                     <TableCell sx={{ fontWeight: 500 }}>{patient.fullName}</TableCell>

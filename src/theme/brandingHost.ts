@@ -53,12 +53,28 @@ function resolveBrandingHost(): string {
   return window.location.host;
 }
 
+// Subdomínios do domínio base que são da própria plataforma (backoffice, site), nunca de clínica:
+// a API os reserva, então um 404 da marca neles é esperado. VITE_PLATFORM_HOSTS acrescenta outros.
+const PLATFORM_SUBDOMAINS = ['www', 'app', 'admin', 'backoffice', 'plataforma'];
+
 /**
- * Endereço de outra clínica em dev, no mesmo modo da página atual: subdomínio de `localhost`
- * (outra origem, então sem a sessão desta aba) ou, acessando por IP, `?tenant=`.
+ * O endereço é da plataforma (marca padrão, backoffice) e não de uma clínica? Serve para separar
+ * os dois casos em que a marca pública dá 404: endereço da plataforma (normal) e endereço de
+ * clínica que não existe ou está suspensa ("Endereço não encontrado").
  */
-export function devClinicUrl(subdomain: string, path: string): string {
-  const { protocol, port } = window.location;
-  if (isIpAccess()) return `${path}?tenant=${encodeURIComponent(subdomain)}`;
-  return `${protocol}//${subdomain}${DEV_SUFFIX}${port ? `:${port}` : ''}${path}`;
+export function isPlatformAddress(): boolean {
+  const hostname = window.location.hostname.toLowerCase();
+  if (import.meta.env.DEV) return getBrandingHost() === window.location.host;
+
+  const extra = (import.meta.env.VITE_PLATFORM_HOSTS ?? '')
+    .split(',')
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+  if (extra.includes(hostname)) return true;
+
+  const baseDomain = import.meta.env.VITE_APP_BASE_DOMAIN?.trim().toLowerCase();
+  // Sem o domínio base não dá para saber: melhor a marca padrão do que travar o backoffice.
+  if (!baseDomain) return true;
+  if (hostname === baseDomain) return true;
+  return PLATFORM_SUBDOMAINS.some((subdomain) => hostname === `${subdomain}.${baseDomain}`);
 }

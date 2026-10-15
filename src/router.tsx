@@ -9,10 +9,12 @@ import {
 } from '@/auth/guards';
 import { FullScreenLoader } from '@/components/FullScreenLoader';
 import { PatientSearch } from '@/layouts/PatientSearch';
+import { RootLayout } from '@/layouts/RootLayout';
 import { ShellLayout } from '@/layouts/ShellLayout';
 import { clinicNavigation, platformNavigation } from '@/layouts/navigation';
 import { LoginPage } from '@/pages/LoginPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
+import { RouteErrorPage } from '@/pages/RouteErrorPage';
 
 /**
  * Tela carregada sob demanda: vira um arquivo JS separado, baixado só quando a
@@ -24,8 +26,11 @@ function page<K extends string>(load: () => Promise<Record<K, ComponentType>>, n
 
 export const router = createBrowserRouter([
   {
+    element: <RootLayout />,
     // Exibido enquanto a tela de uma URL aberta diretamente é baixada.
     HydrateFallback: FullScreenLoader,
+    // Erro fora do layout do app (login, links de email, textos legais).
+    errorElement: <RouteErrorPage fullScreen />,
     children: [
       {
         element: <RedirectIfAuthenticated />,
@@ -61,100 +66,106 @@ export const router = createBrowserRouter([
               {
                 element: <ShellLayout navigation={clinicNavigation} search={<PatientSearch />} />,
                 children: [
-                  { path: '/inicio', lazy: page(() => import('@/pages/home/HomePage'), 'HomePage') },
+                  // Erro numa tela aparece no lugar do conteúdo, com o menu (pode navegar para outra).
                   {
-                    element: <RequirePermission permission="appointments:read" />,
+                    errorElement: <RouteErrorPage />,
                     children: [
-                      { path: '/agenda', lazy: page(() => import('@/pages/schedule/SchedulePage'), 'SchedulePage') },
-                    ],
-                  },
-                  {
-                    element: <RequirePermission permission="patients:read" />,
-                    children: [
+                      { path: '/inicio', lazy: page(() => import('@/pages/home/HomePage'), 'HomePage') },
                       {
-                        path: '/pacientes',
-                        lazy: page(() => import('@/pages/patients/PatientsListPage'), 'PatientsListPage'),
+                        element: <RequirePermission permission="appointments:read" />,
+                        children: [
+                          { path: '/agenda', lazy: page(() => import('@/pages/schedule/SchedulePage'), 'SchedulePage') },
+                        ],
                       },
                       {
-                        path: '/pacientes/:id',
-                        lazy: page(() => import('@/pages/patients/PatientDetailPage'), 'PatientDetailPage'),
-                      },
-                      {
-                        element: <RequirePermission permission="patients:write" />,
+                        element: <RequirePermission permission="patients:read" />,
                         children: [
                           {
-                            path: '/pacientes/novo',
-                            lazy: page(() => import('@/pages/patients/PatientFormPage'), 'PatientFormPage'),
+                            path: '/pacientes',
+                            lazy: page(() => import('@/pages/patients/PatientsListPage'), 'PatientsListPage'),
                           },
                           {
-                            path: '/pacientes/removidos',
-                            lazy: page(() => import('@/pages/patients/RemovedPatientsPage'), 'RemovedPatientsPage'),
+                            path: '/pacientes/:id',
+                            lazy: page(() => import('@/pages/patients/PatientDetailPage'), 'PatientDetailPage'),
                           },
                           {
-                            path: '/pacientes/:id/editar',
-                            lazy: page(() => import('@/pages/patients/PatientFormPage'), 'PatientFormPage'),
-                          },
-                          {
-                            path: '/pacientes/:id/anamneses/nova',
-                            lazy: page(() => import('@/pages/patients/anamnesis/FillAnamnesisPage'), 'FillAnamnesisPage'),
+                            element: <RequirePermission permission="patients:write" />,
+                            children: [
+                              {
+                                path: '/pacientes/novo',
+                                lazy: page(() => import('@/pages/patients/PatientFormPage'), 'PatientFormPage'),
+                              },
+                              {
+                                path: '/pacientes/removidos',
+                                lazy: page(() => import('@/pages/patients/RemovedPatientsPage'), 'RemovedPatientsPage'),
+                              },
+                              {
+                                path: '/pacientes/:id/editar',
+                                lazy: page(() => import('@/pages/patients/PatientFormPage'), 'PatientFormPage'),
+                              },
+                              {
+                                path: '/pacientes/:id/anamneses/nova',
+                                lazy: page(() => import('@/pages/patients/anamnesis/FillAnamnesisPage'), 'FillAnamnesisPage'),
+                              },
+                            ],
                           },
                         ],
                       },
+                      {
+                        element: <RequirePermission permission="billing:read" />,
+                        children: [
+                          { path: '/financeiro', lazy: page(() => import('@/pages/billing/BillingPage'), 'BillingPage') },
+                          {
+                            path: '/financeiro/cobrancas/:id',
+                            lazy: page(() => import('@/pages/billing/ChargeDetailPage'), 'ChargeDetailPage'),
+                          },
+                        ],
+                      },
+                      {
+                        element: <RequirePermission permission="anamnesis_templates:manage" />,
+                        children: [
+                          {
+                            path: '/anamnese/formularios',
+                            lazy: page(() => import('@/pages/anamnesis/templates/TemplatesListPage'), 'TemplatesListPage'),
+                          },
+                          {
+                            path: '/anamnese/formularios/novo',
+                            lazy: page(() => import('@/pages/anamnesis/templates/TemplateEditorPage'), 'TemplateEditorPage'),
+                          },
+                          {
+                            path: '/anamnese/formularios/:id',
+                            lazy: page(() => import('@/pages/anamnesis/templates/TemplateEditorPage'), 'TemplateEditorPage'),
+                          },
+                        ],
+                      },
+                      {
+                        element: <RequirePermission permission="users:manage" />,
+                        children: [{ path: '/usuarios', lazy: page(() => import('@/pages/users/UsersPage'), 'UsersPage') }],
+                      },
+                      {
+                        element: <RequirePermission permission="roles:manage" />,
+                        children: [{ path: '/papeis', lazy: page(() => import('@/pages/roles/RolesPage'), 'RolesPage') }],
+                      },
+                      {
+                        element: <RequirePermission permission="audit:read" />,
+                        children: [{ path: '/auditoria', lazy: page(() => import('@/pages/audit/AuditPage'), 'AuditPage') }],
+                      },
+                      {
+                        element: <RequirePermission permission="tenant:manage" />,
+                        children: [
+                          {
+                            path: '/configuracoes',
+                            lazy: page(() => import('@/pages/settings/SettingsPage'), 'SettingsPage'),
+                          },
+                        ],
+                      },
+                      {
+                        path: '/minha-conta',
+                        lazy: page(() => import('@/pages/account/MyAccountPage'), 'MyAccountPage'),
+                      },
+                      { path: '*', element: <NotFoundPage /> },
                     ],
                   },
-                  {
-                    element: <RequirePermission permission="billing:read" />,
-                    children: [
-                      { path: '/financeiro', lazy: page(() => import('@/pages/billing/BillingPage'), 'BillingPage') },
-                      {
-                        path: '/financeiro/cobrancas/:id',
-                        lazy: page(() => import('@/pages/billing/ChargeDetailPage'), 'ChargeDetailPage'),
-                      },
-                    ],
-                  },
-                  {
-                    element: <RequirePermission permission="anamnesis_templates:manage" />,
-                    children: [
-                      {
-                        path: '/anamnese/formularios',
-                        lazy: page(() => import('@/pages/anamnesis/templates/TemplatesListPage'), 'TemplatesListPage'),
-                      },
-                      {
-                        path: '/anamnese/formularios/novo',
-                        lazy: page(() => import('@/pages/anamnesis/templates/TemplateEditorPage'), 'TemplateEditorPage'),
-                      },
-                      {
-                        path: '/anamnese/formularios/:id',
-                        lazy: page(() => import('@/pages/anamnesis/templates/TemplateEditorPage'), 'TemplateEditorPage'),
-                      },
-                    ],
-                  },
-                  {
-                    element: <RequirePermission permission="users:manage" />,
-                    children: [{ path: '/usuarios', lazy: page(() => import('@/pages/users/UsersPage'), 'UsersPage') }],
-                  },
-                  {
-                    element: <RequirePermission permission="roles:manage" />,
-                    children: [{ path: '/papeis', lazy: page(() => import('@/pages/roles/RolesPage'), 'RolesPage') }],
-                  },
-                  {
-                    element: <RequirePermission permission="audit:read" />,
-                    children: [{ path: '/auditoria', lazy: page(() => import('@/pages/audit/AuditPage'), 'AuditPage') }],
-                  },
-                  {
-                    element: <RequirePermission permission="tenant:manage" />,
-                    children: [
-                      {
-                        path: '/configuracoes',
-                        lazy: page(() => import('@/pages/settings/SettingsPage'), 'SettingsPage'),
-                      },
-                    ],
-                  },
-                  {
-                    path: '/minha-conta',
-                    lazy: page(() => import('@/pages/account/MyAccountPage'), 'MyAccountPage'),
-                  },
-                  { path: '*', element: <NotFoundPage /> },
                 ],
               },
             ],
@@ -168,13 +179,18 @@ export const router = createBrowserRouter([
               {
                 element: <ShellLayout navigation={platformNavigation} areaLabel="Backoffice" />,
                 children: [
-                  { index: true, element: <Navigate to="clinicas" replace /> },
-                  { path: 'clinicas', lazy: page(() => import('@/pages/platform/TenantsPage'), 'TenantsPage') },
                   {
-                    path: 'minha-conta',
-                    lazy: page(() => import('@/pages/account/MyAccountPage'), 'MyAccountPage'),
+                    errorElement: <RouteErrorPage />,
+                    children: [
+                      { index: true, element: <Navigate to="clinicas" replace /> },
+                      { path: 'clinicas', lazy: page(() => import('@/pages/platform/TenantsPage'), 'TenantsPage') },
+                      {
+                        path: 'minha-conta',
+                        lazy: page(() => import('@/pages/account/MyAccountPage'), 'MyAccountPage'),
+                      },
+                      { path: '*', element: <NotFoundPage /> },
+                    ],
                   },
-                  { path: '*', element: <NotFoundPage /> },
                 ],
               },
             ],
