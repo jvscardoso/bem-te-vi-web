@@ -37,7 +37,7 @@ Retrato do que existe no código. Leia antes de começar uma tarefa. Regras de n
 | Usuários | `/usuarios` | `users:manage` | Lista; criar por **convite** (padrão) ou com senha (com gerador); editar papel/status e, só se o papel atende (`appointments:attend`; pelo papel escolhido com `roles:manage`, senão por `attendsPatients`), a duração padrão; "Reenviar convite" para `invited`, "Redefinir senha" para os demais; regras de "acima de si" e último admin na UI. |
 | Papéis e permissões | `/papeis` | `roles:manage` | CRUD de papéis com permissões agrupadas por área; marcar escrita/`all` marca a leitura; bloqueia o que o ator não tem; `appointments:attend` ("Atende pacientes") no grupo Agenda; aviso para papel com `appointments:read` sem `all` nem `attend` (não tem agenda para ver). |
 | Auditoria | `/auditoria` | `audit:read` | Trilha da clínica (LGPD): filtros por usuário (só com `users:manage`, que lista os usuários), ação, paciente (busca) e período; tabela com data, usuário, ação e link para a ficha; diálogo de detalhes (IP, navegador, campos alterados). Filtros na URL, exceto o paciente. |
-| Configurações | `/configuracoes` | `tenant:manage` | Abas Dados, Agenda (durações), Marca (nome fantasia, cores com pré-visualização, **upload de logo** ou URL externa), Domínio (registro TXT, verificar agora) , **Tela inicial** (blocos do Início: adicionar, remover, arrastar ou mover, largura 1/3, 1/2, 2/3 ou inteira, restaurar padrão, descartar; vale para toda a equipe; salvar depende da task 18 da API e hoje mostra aviso) e **Encerrar conta** (exportar todos os dados com `patients:export`; pedir o encerramento com senha e confirmação; cancelar durante a carência). Salvar a marca re-tematiza o app na hora. |
+| Configurações | `/configuracoes` | `tenant:manage` | Abas Dados, Agenda (durações), Marca (nome fantasia, cores com pré-visualização, **upload de logo** ou URL externa), Domínio (registro TXT, verificar agora) , **Tela inicial** (blocos do Início: adicionar, remover, arrastar ou mover, largura 1/3, 1/2, 2/3 ou inteira, restaurar padrão, descartar; vale para toda a equipe; salva em `/configs`, mostrando quem alterou e quando; salvar igual ao padrão apaga o salvo) e **Encerrar conta** (exportar todos os dados com `patients:export`; pedir o encerramento com senha e confirmação; cancelar durante a carência). Salvar a marca re-tematiza o app na hora. |
 | Minha conta | `/minha-conta` | — | Dados do usuário, trocar senha (troca o token), duração padrão própria (só com `appointments:attend`). |
 | Não encontrado | `*` | — | 404 dentro do shell. |
 
@@ -52,11 +52,11 @@ Retrato do que existe no código. Leia antes de começar uma tarefa. Regras de n
 
 - **Modo noturno:** chave "Modo noturno" no menu do usuário (canto superior direito, junto de Minha conta e Sair). A escolha fica salva no navegador (`localStorage` `btv.colorMode`); sem escolha, segue o tema do sistema. Vale também nas telas públicas. A versão legível da exportação de paciente fica sempre clara, para imprimir.
 - **Menu lateral recolhível (desktop):** um chip redondo na borda do menu, na altura da logo, recolhe e expande o menu. Recolhido, cada item mostra o ícone com o rótulo embaixo (rótulo curto `shortLabel` em `navigation.tsx` quando o nome não cabe: "Anamnese", "Papéis", com o nome completo no tooltip), e os títulos de seção viram divisórias. A escolha fica salva no navegador (`localStorage` `btv.sidebarCollapsed`). No celular o menu continua temporário e sempre completo.
-- **Busca global de pacientes (topo):** com `patients:read`, só na área da clínica (`src/layouts/PatientSearch.tsx`). A partir de 2 caracteres, com debounce de 400 ms, mostra até 6 pacientes (nome, CPF e telefone) e "Ver todos os N resultados". Escolher um paciente abre a ficha; Enter sem escolher abre `/pacientes?q=`. No desktop fica à esquerda da barra; no celular vira um ícone que abre a busca por cima da barra. Hoje acha por nome e CPF; **telefone depende da task 12 da API**.
+- **Busca global de pacientes (topo):** com `patients:read`, só na área da clínica (`src/layouts/PatientSearch.tsx`). A partir de 2 caracteres, com debounce de 400 ms, mostra até 6 pacientes (nome, CPF e telefone) e "Ver todos os N resultados". Escolher um paciente abre a ficha; Enter sem escolher abre `/pacientes?q=`. No desktop fica à esquerda da barra; no celular vira um ícone que abre a busca por cima da barra. Acha por nome, CPF ou telefone (com ou sem máscara, só com parte dos dígitos, combinado com o nome).
 - **Cores dos status de agendamento:** fixas, sem depender da marca: Agendado azul, Confirmado roxo, Realizado verde, Cancelado cinza, Faltou laranja. Os botões de mudar status no agendamento usam a cor do status de destino (Cancelar em vermelho).
 - **Aviso de encerramento da conta:** com pedido ativo, um banner em todas as telas da clínica para quem tem `tenant:manage`, com "Exportar dados" e "Cancelar encerramento". Os demais usuários não veem (a API só informa o pedido a quem tem `tenant:manage`).
 - **Aceite pendente de Termos/Política (LGPD):** com `pendingLegalDocuments` não vazio em `/auth/me`, o `RequireAuth` mostra um modal que não fecha (`PendingLegalScreen`) no lugar do app, tanto da clínica quanto da plataforma. "Aceitar e continuar" envia as duas versões vigentes a `POST /auth/me/legal-acceptances`; "Sair" desloga. Textos diferentes para os dois documentos pendentes e para versão nova de um só.
-- Whitelabel por endereço (subdomínio / domínio próprio; em dev, `<subdomínio>.localhost:5173`, com `?tenant=` ainda aceito em localhost puro), tema MUI montado a partir das cores da clínica.
+- Whitelabel por endereço (subdomínio / domínio próprio; em dev, `<subdomínio>.localhost:5173`; por IP, `?tenant=`), tema MUI montado a partir das cores da clínica.
 - **Sessão (task 21):** token de acesso de 15 min só em memória, renovado sozinho pelo cookie de refresh (antes de vencer, ou uma vez depois de um `401`; um refresh por vez); o reload recupera a sessão pelo cookie; "Sair" encerra a sessão no servidor. `GET /auth/me` sempre fresco; refresh recusado leva ao login com aviso "sessão expirada"; 400 nunca desloga. Em dev, a API passa pelo proxy `/api` do Vite (o cookie é `SameSite=Strict`).
 - Telas e ações escondidas por permissão; acesso direto a rota sem permissão mostra "Acesso negado".
 - Divisão por rota (lazy) com chunk `vendor` separado.
@@ -67,9 +67,9 @@ As 11 tasks recebidas da API (01 a 11) foram concluídas e conferidas no código
 
 **Convenção (desde 10/10/2026):** mudança que a **API** precisa fazer vira task em `../bem-te-vi-api/docs/changes/` (índice `00-indice.md` lá); mudança que o **front** precisa fazer vira task em `docs/changes/` deste repositório. A numeração é uma só nos dois. As duas pastas ficam fora do git.
 
-**Tasks do front abertas** (`docs/changes/00-indice.md`): 20 (segurança do front), 22 a 28 (o que falta no front depois das entregas da API). Feita: 21 (sessão, 14/10/2026).
+**Tasks do front abertas** (`docs/changes/00-indice.md`): 20 (segurança do front), 22, 24, 25 e 28. Feitas em 14/10/2026: 21 (sessão), 23 (quem atende), 26 (`/configs`) e 27 (links de email com subdomínio).
 
-**Pedidos do front à API:** 12 a 19 entregues pela API em 14/10/2026; o que faltava no front virou as tasks 21 a 27 (e a 12 só precisa trocar os textos da busca para "nome, CPF ou telefone"). Aberta na API: 29 (assinatura das clínicas pelo Asaas, sem efeito no front por enquanto).
+**Pedidos do front à API:** 12 a 19 entregues pela API em 14/10/2026; o que faltava no front virou as tasks 21 a 27 (e a 12 só precisava trocar os textos da busca, feito em 14/10/2026). Aberta na API: 29 (assinatura das clínicas pelo Asaas, sem efeito no front por enquanto).
 
 **Recebidas da API (concluídas):**
 
@@ -94,7 +94,7 @@ As 11 tasks recebidas da API (01 a 11) foram concluídas e conferidas no código
 3. Landing page do produto: **fora deste repositório** (decidido em 10/10/2026). Ela faz o cadastro de clínicas; o contrato e as regras estão em [`cadastro-de-clinica-na-landing.md`](cadastro-de-clinica-na-landing.md).
 4. Testes automatizados (nenhum existe).
 5. Build/deploy de produção: não há configuração de hospedagem nem de fallback de SPA (ver [`arquitetura.md`](arquitetura.md#build-e-deploy)). Incluir os cabeçalhos de segurança e a CSP da task 20 (`docs/changes/20-seguranca-do-front.md`).
-6. **Tasks do front 22 a 28** (vindas das entregas da API, ver `docs/changes/00-indice.md`) e os textos da busca por telefone (pedido 12, já entregue pela API).
+6. **Tasks do front 22, 24, 25 e 28** (vindas das entregas da API, ver `docs/changes/00-indice.md`).
 
 ## Limitações e bugs conhecidos
 

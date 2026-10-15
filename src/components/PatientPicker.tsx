@@ -26,7 +26,7 @@ interface PatientPickerProps {
   onBlur?: () => void;
 }
 
-/** Busca de paciente por nome ou CPF (usa a busca `q` da API, com debounce). */
+/** Busca de paciente por nome, CPF ou telefone (usa a busca `q` da API, com debounce). */
 export function PatientPicker({
   value,
   onChange,
@@ -80,7 +80,7 @@ export function PatientPicker({
       }}
       loading={query.isFetching}
       loadingText="Buscando…"
-      noOptionsText={q ? 'Nenhum paciente encontrado' : 'Digite o nome ou CPF'}
+      noOptionsText={q ? 'Nenhum paciente encontrado' : 'Digite o nome, CPF ou telefone'}
       disabled={disabled}
       size={size}
       onBlur={onBlur}

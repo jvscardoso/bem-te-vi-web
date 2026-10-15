@@ -25,7 +25,7 @@ import { useDebouncedValue } from '@/lib/useDebouncedValue';
 const MIN_CHARS = 2;
 const DEBOUNCE_MS = 400;
 const MAX_RESULTS = 6;
-const PLACEHOLDER = 'Buscar paciente por nome ou CPF';
+const PLACEHOLDER = 'Buscar paciente por nome, CPF ou telefone';
 
 type Option =
   | { kind: 'patient'; patient: Patient }

@@ -38,7 +38,12 @@ export function PatientsCard() {
         )}
       </Stack>
       <Box component="form" onSubmit={submit}>
-        <SearchField value={search} onChange={setSearch} placeholder="Buscar por nome ou CPF e Enter" fullWidth />
+        <SearchField
+          value={search}
+          onChange={setSearch}
+          placeholder="Buscar por nome, CPF ou telefone e Enter"
+          fullWidth
+        />
       </Box>
     </Paper>
   );

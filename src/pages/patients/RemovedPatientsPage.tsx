@@ -72,7 +72,7 @@ export function RemovedPatientsPage() {
           <SearchField
             value={list.search}
             onChange={list.setSearch}
-            placeholder="Buscar por nome ou CPF"
+            placeholder="Buscar por nome, CPF ou telefone"
             sx={{ maxWidth: { sm: 400 } }}
           />
         </Stack>

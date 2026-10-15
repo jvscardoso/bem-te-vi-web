@@ -71,7 +71,7 @@ Definido em `src/router.tsx` com `createBrowserRouter`.
 
 - `getBrandingHost()` (`src/theme/brandingHost.ts`) decide o endereço uma vez por carregamento (função interna `resolveBrandingHost`):
   - produção: `window.location.host`;
-  - dev: subdomínio de `localhost` (`clinica-demo.localhost:5173` → manda só `clinica-demo`, que a API trata como subdomínio). Em `localhost` puro, modo antigo: `?tenant=<subdomínio>` (lembrado na aba em `sessionStorage` `btv.devTenant`; `?tenant=` vazio esquece), senão `VITE_DEV_TENANT`, senão o host. O modo antigo sai quando a API mudar os links de email (task 15: `../bem-te-vi-api/docs/changes/15-links-de-email-com-subdominio-em-dev.md`). `devClinicUrl()` monta o endereço de outra clínica no modo em uso.
+  - dev: subdomínio de `localhost` (`clinica-demo.localhost:5173` → manda só `clinica-demo`, que a API trata como subdomínio). `localhost` puro é a marca padrão (backoffice). Por IP (celular na rede local), um IP não tem subdomínio: vale `?tenant=<subdomínio>` (lembrado na aba em `sessionStorage` `btv.devTenant`; `?tenant=` vazio esquece), o mesmo formato dos links de email da API quando o `FRONTEND_URL` dela é um IP. `devClinicUrl()` monta o endereço de outra clínica no modo em uso.
 - `BrandingProvider` busca `GET /public/branding?host=` (chave `['public-branding', host]`, `staleTime` 5 min, sem retry em 404), monta o tema MUI com `createAppTheme(cores)`, aplica `CssBaseline` e põe `tradeName ?? name` no `document.title`. `useBranding()` dá `status` (`loading`/`found`/`notFound`/`error`), `displayName` e `logoUrl`. Sem clínica, vale a marca padrão do bem-te-vi.
 - **Modo claro/escuro** (`src/theme/colorMode.ts`): `useColorModeState` lê `localStorage` `btv.colorMode` antes do primeiro render (sem piscar) e, sem escolha salva, acompanha `prefers-color-scheme`. O `BrandingProvider` passa o modo para `createAppTheme` e expõe `useColorMode()` (`mode`, `setMode`). Não usamos as variáveis CSS do MUI (`colorSchemes`) porque a pré-visualização de marca usa um `ThemeProvider` aninhado.
   - No escuro, `createAppTheme` clareia as cores da clínica até um contraste mínimo com o fundo (`readableOnDark`).
@@ -122,7 +122,7 @@ Definido em `src/router.tsx` com `createBrowserRouter`.
 - `useHomeLayout` lê o layout salvo (ou o padrão). `HomeGrid` desenha os blocos; com `editing`, mostra a barra de cada um (arrastar, largura, mover, remover) e a prévia inerte. Fora da edição, esconde os blocos sem permissão.
 - O editor fica em **Configurações › Tela inicial** (`src/pages/settings/HomeLayoutTab.tsx`, aba sem a largura máxima das outras para a prévia mostrar as larguras reais). O Início só exibe.
 - Cada bloco é um `Paper` com `height: 100%` (os da mesma linha ficam da mesma altura) e se adapta à **própria largura** com container queries (o item da grade tem `containerType: inline-size`; ex.: `SummaryCards embedded`).
-- Salvar igual ao padrão chama o `DELETE` (volta a acompanhar o padrão do front). `404` no `GET` = sem layout salvo.
+- Salvar igual ao padrão chama o `DELETE` (volta a acompanhar o padrão do front). `layouts.home: null` = nunca configurado. Se a leitura falhar, o Início usa o padrão (o layout é só a arrumação); a aba de Configurações mostra o erro.
 - **Bloco novo:** criar o componente em `src/pages/home/`, registrar em `HOME_WIDGETS` e, se fizer sentido, incluir no `DEFAULT_WIDGETS`.
 
 ## Padrões de componentes e formulários
@@ -144,5 +144,5 @@ Não há testes automatizados nem ferramenta de teste instalada. A verificação
 ## Build e deploy
 
 - `npm run build` = `tsc -b && vite build` → `dist/`. Vite 8 (Rolldown) com o grupo `vendor` (react, react-dom, scheduler, react-router, @tanstack) num arquivo estável; o MUI fica na divisão automática por rota.
-- Variáveis (`.env.example`): `VITE_API_URL`, `VITE_DEV_TENANT` (só dev) e `VITE_APP_BASE_DOMAIN` (domínio das clínicas, usado para mostrar o endereço em Configurações e no backoffice).
+- Variáveis (`.env.example`): `VITE_API_URL` (em dev, `/api`, pelo proxy do Vite) e `VITE_APP_BASE_DOMAIN` (domínio das clínicas, usado para mostrar o endereço em Configurações e no backoffice).
 - **Deploy ainda não configurado.** Requisitos: servir `dist/` como SPA (toda rota desconhecida devolve `index.html`, inclusive `/reset-password` e `/accept-invite`), responder em `*.<APP_BASE_DOMAIN>` e nos domínios próprios verificados, e a API com `FRONTEND_URL`/CORS apontando para o front.

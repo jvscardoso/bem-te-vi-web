@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink } from 'react-router';
-import { Alert, Box, Button, ListItemText, Menu, MenuItem, Paper, Skeleton, Stack, Typography } from '@mui/material';
+import { Box, Button, ListItemText, Menu, MenuItem, Paper, Skeleton, Stack, Typography } from '@mui/material';
 import AddOutlined from '@mui/icons-material/AddOutlined';
 import { configsApi, configsKeys, EMPTY_CONFIGS, type LayoutWidget, type ScreenLayout, type TenantConfigs } from '@/api/configs';
 import { useTenantId } from '@/auth/AuthContext';
 import { ErrorMessages } from '@/components/ErrorMessages';
 import { useNotify } from '@/components/notifications/NotificationContext';
-import { isApiError } from '@/lib/errors';
 import { formatDateTime } from '@/lib/format';
 import { HomeGrid } from '@/pages/home/HomeGrid';
 import { DEFAULT_WIDGETS, newWidgetId, sameWidgets } from '@/pages/home/layout';
@@ -100,14 +99,7 @@ function HomeLayoutEditor({ saved, savedWidgets }: { saved: ScreenLayout | null;
         </Stack>
         {save.error && (
           <Box sx={{ mt: 2 }}>
-            {isApiError(save.error, 404) ? (
-              <Alert severity="warning">
-                Salvar a tela inicial ainda não está disponível: a API precisa ser atualizada. As mudanças não foram
-                salvas.
-              </Alert>
-            ) : (
-              <ErrorMessages error={save.error} />
-            )}
+            <ErrorMessages error={save.error} />
           </Box>
         )}
       </Paper>

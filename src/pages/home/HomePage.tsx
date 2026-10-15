@@ -5,7 +5,6 @@ import EventOutlined from '@mui/icons-material/EventOutlined';
 import PaymentsOutlined from '@mui/icons-material/PaymentsOutlined';
 import PersonAddAlt1Outlined from '@mui/icons-material/PersonAddAlt1Outlined';
 import { useAuth } from '@/auth/AuthContext';
-import { ErrorMessages } from '@/components/ErrorMessages';
 import { formatLongDate } from '@/lib/dates';
 import { ChargeDialog } from '@/pages/billing/ChargeDialog';
 import { AppointmentDialog } from '@/pages/schedule/AppointmentDialog';
@@ -72,9 +71,8 @@ export function HomePage() {
         )}
       </Stack>
 
-      {query.error ? (
-        <ErrorMessages error={query.error} />
-      ) : query.isPending ? null : hasVisibleWidget ? (
+      {/* Sem o layout (erro ao ler), vale o padrão: é só a arrumação, e cada bloco mostra o próprio erro. */}
+      {query.isPending ? null : hasVisibleWidget ? (
         <HomeGrid widgets={widgets} />
       ) : (
         <Paper variant="outlined" sx={{ p: 3 }}>

@@ -56,7 +56,6 @@ npm run dev                  # http://localhost:5173
 | Variável | Uso |
 |---|---|
 | `VITE_API_URL` | URL da API. Em dev, `/api` (proxy do Vite para `http://localhost:3000`): o cookie de refresh da sessão só funciona com a API na mesma origem do front |
-| `VITE_DEV_TENANT` | Subdomínio da clínica usado em `localhost` puro quando a URL não traz `?tenant=` (modo antigo) |
 | `VITE_APP_BASE_DOMAIN` | Domínio base das clínicas em produção (ex.: `bemtevi.com.br`), usado para mostrar o endereço da clínica em Configurações e no backoffice |
 
 ### 3. Escolher a clínica em dev
@@ -69,7 +68,7 @@ http://clinica-demo.localhost:5173/login
 
 `http://localhost:5173` puro abre com a marca padrão do bem-te-vi, que é por onde entram os usuários do backoffice. O login só aceita usuários da clínica do endereço.
 
-O modo antigo ainda funciona em `localhost` puro: `http://localhost:5173/login?tenant=clinica-demo` (o valor fica lembrado na aba, e `?tenant=` vazio esquece). Ele continua porque os links dos emails da API em dev usam esse formato. Ver a task 15 da API (`../bem-te-vi-api/docs/changes/15-links-de-email-com-subdominio-em-dev.md`).
+Acessando por IP (ex.: pelo celular na rede local, com `npm run dev -- --host`), um IP não tem subdomínio: use `http://192.168.0.10:5173/login?tenant=clinica-demo`. O valor fica lembrado na aba, e `?tenant=` vazio esquece. Os links dos emails da API em dev já chegam com o subdomínio (`http://<sub>.localhost:5173/...`), ou com `?tenant=` quando o `FRONTEND_URL` da API é um IP.
 
 ## Scripts
 

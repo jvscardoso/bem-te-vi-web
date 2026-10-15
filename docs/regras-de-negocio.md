@@ -168,7 +168,7 @@ Recomendação: chamar `/auth/me` ao abrir o app (com token salvo) e ao voltar o
 
 - Resposta **sempre `204`**, exista a conta ou não (a rota não revela emails cadastrados). Mostre sempre a mesma mensagem.
 - O link só sai para contas que conseguiriam logar: ativas, de clínica ativa e, se o `host` aponta para uma clínica, dessa clínica.
-- O email leva o nome da clínica e um link de **1 hora** para a rota do front **`/reset-password?token=...`** (em dev, também `&tenant=<subdomínio>`). Pedir outro link invalida o anterior.
+- O email leva o nome da clínica e um link de **1 hora** para a rota do front **`/reset-password?token=...`** (em dev, no endereço `http://<subdomínio>.localhost:5173`; com `FRONTEND_URL` da API num IP, `&tenant=<subdomínio>`). Pedir outro link invalida o anterior.
 
 **Redefinir senha (link do email)** — `POST /auth/reset-password` (pública, 5 req/min) com `{ "token": "...", "password": "min8chars" }`:
 
@@ -178,7 +178,7 @@ Recomendação: chamar `/auth/me` ao abrir o app (com token salvo) e ao voltar o
 
 **Aceitar convite (link do email)** — `POST /auth/accept-invite` (pública, 5 req/min) com `{ "token": "...", "password": "min8chars", "legalAcceptance": { "termsVersion": "1", "privacyVersion": "1" } }`:
 
-- O link de convite vale **7 dias** e aponta para a rota do front **`/accept-invite?token=...`** (em dev, também `&tenant=`). Um reenvio (seção 6) invalida o link anterior.
+- O link de convite vale **7 dias** e aponta para a rota do front **`/accept-invite?token=...`** (em dev, em `http://<subdomínio>.localhost:5173`; com `FRONTEND_URL` num IP, `&tenant=`). Um reenvio (seção 6) invalida o link anterior.
 - `legalAcceptance` é obrigatório: as versões vigentes de `GET /public/legal` (seção 17). Versão diferente da vigente → `400` "Aceite a versão vigente dos Termos de Uso (…) e da Política de Privacidade (…)".
 - `200 { "email": "..." }`: conta ativada (`status: active`) com a senha escolhida.
 - `400 "Link inválido ou expirado"`: token inexistente, já usado, vencido, substituído por reenvio ou de conta desativada antes do aceite.
@@ -300,6 +300,15 @@ Resposta: `{ name, tradeName, logoUrl, primaryColor, secondaryColor }` (campos d
 - Porta e maiúsculas são ignoradas.
 - `404` = clínica inexistente, suspensa ou domínio não verificado → mostrar login com tema padrão ou página "clínica não encontrada".
 - Exibir `tradeName ?? name` como nome da clínica.
+
+### 5.4.1 Configurações de tela (`/configs`)
+
+Desde 14/10/2026 (task 18 da API). Layout de telas da clínica, hoje só a tela inicial.
+
+- `GET /tenants/:tenantId/configs` (qualquer usuário da clínica) → `{ "layouts": { "home": { "version": 1, "widgets": [{ "id", "type", "width" }], "updatedAt", "updatedBy": { "id", "name" } } | null } }`. `null` = nunca configurada (vale o padrão do front). Nada sensível entra aqui, porque a equipe toda lê.
+- `PUT /tenants/:tenantId/configs/layouts/home` (`tenant:manage`) com `{ version: 1, widgets }` → `200` com o layout salvo. Até 24 blocos; `id` único (`^[a-zA-Z0-9_-]+$`, até 40); `type` (`^[a-z0-9-]+$`, até 50; a API não confere o catálogo, que é do front); `width` em `full`, `two-thirds`, `half`, `third`.
+- `DELETE /tenants/:tenantId/configs/layouts/home` (`tenant:manage`) → `204`: volta ao padrão.
+- Tela desconhecida → `404`; sem `tenant:manage` → `403`.
 
 ### 5.5 Domínio próprio (verificação por DNS)
 
@@ -449,8 +458,8 @@ Resposta inclui também `id, tenantId, deletedAt, createdAt, updatedAt`. No `PAT
 
 - Separada em palavras; **todas** precisam casar.
 - Palavra com letras → busca no nome, qualquer posição/ordem, sem diferenciar maiúsculas e acentos (`joao silva` acha "João da Silva").
-- Palavra só com dígitos, `.` e `-` → busca parcial no CPF (`123.456` = `123456`).
-- Combina: `maria 1234` = nome com "maria" **e** CPF contendo "1234".
+- Palavra sem letras (dígitos e `. - ( ) / +`) → busca parcial no CPF **ou no telefone**, comparando só os dígitos (`123.456` = `123456`; `(81) 98888-7777`, `81988887777` e `98888` acham o mesmo telefone). Desde 14/10/2026 (task 12 da API).
+- Combina: `maria 1234` = nome com "maria" **e** CPF ou telefone contendo "1234".
 - Até 100 caracteres. Ordem: nome A–Z. Removidos: do mais recentemente removido ao mais antigo.
 - Sugestão: busca com debounce (~300ms) — isso também serve de **seletor de paciente** na agenda e no financeiro.
 
@@ -919,10 +928,10 @@ export interface PlatformTenant {
 ## 16. Ambiente de desenvolvimento
 
 1. Na `bem-te-vi-api`: `docker compose --profile app up -d --build` sobe banco, API (`http://localhost:3000`) e **Mailpit** (`http://localhost:8025`, caixa de email falsa onde chegam os emails de recuperação de senha e convite). Alternativa sem container da API: `docker compose up -d` (só banco e Mailpit), `npm install`, `npx prisma migrate dev`, `npx prisma db seed`, `npm run start:dev`.
-   - Os links dos emails apontam para `FRONTEND_URL` (padrão `http://localhost:5173`) com `?tenant=<subdomínio>`. Se o front rodar em outra porta, ajuste `FRONTEND_URL` no `.env` da API e rebuilde o container.
+   - Os links dos emails apontam para o subdomínio da clínica em `FRONTEND_URL` (padrão `http://localhost:5173` → `http://<subdomínio>.localhost:5173`); com `FRONTEND_URL` num IP, vão com `?tenant=<subdomínio>`. Se o front rodar em outra porta, ajuste `FRONTEND_URL` no `.env` da API e rebuilde o container.
 2. Criar uma clínica de teste via `POST /tenants` (exemplo em [`cadastro-de-clinica-na-landing.md`](cadastro-de-clinica-na-landing.md#em-desenvolvimento)) e logar com o dono.
 3. Para o backoffice: `PLATFORM_ADMIN_EMAIL=... PLATFORM_ADMIN_PASSWORD=... npm run bootstrap:platform`.
-4. Em dev (sem `APP_BASE_DOMAIN`), resolver a marca com `GET /public/branding?host=<subdomain>`; o front usa subdomínios de `localhost` (`clinica-demo.localhost:5173` → `host=clinica-demo`) e ainda aceita `?tenant=` em localhost puro.
+4. Em dev (sem `APP_BASE_DOMAIN`), resolver a marca com `GET /public/branding?host=<subdomain>`; o front usa subdomínios de `localhost` (`clinica-demo.localhost:5173` → `host=clinica-demo`) e, acessando por IP, `?tenant=`.
 5. Coleção Postman com todas as rotas e exemplos em `docs/api/bem-te-vi.postman_collection.json` (no repositório da API).
 
 ---
