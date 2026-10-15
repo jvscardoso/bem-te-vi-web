@@ -75,7 +75,16 @@ Formato padrão do NestJS:
 ```
 
 - `message` pode ser **string** ou **array de strings** (erros de validação `400` — mostre todos, ex.: lista de campos inválidos da anamnese). Trate os dois casos.
-- As mensagens já vêm em **português** e são exibíveis ao usuário.
+- As mensagens já vêm em **português**, dizem o campo e são exibíveis ao usuário.
+- O `400` de **validação de formato** (todas as rotas) traz também `errors`, uma entrada por campo errado, com a mesma frase de `message`:
+
+```json
+{ "statusCode": 400, "error": "Bad Request", "message": ["Email inválido"],
+  "errors": [{ "field": "email", "code": "isEmail", "message": "Email inválido" }] }
+```
+
+  `field` é o caminho no corpo ou na query (`name`, `owner.email`, `address.cep`, `fields.0.label`); `code` é a regra (`required`, `isEmail`, `minLength`, `maxLength`, `isUUID`, `isEnum`, `matches`, `max`…, ou `unknownField` para um campo que a rota não aceita). Erros de regra de negócio, `403` e `409` não têm `errors`. No front, `applyFieldErrors` (`src/lib/errors.ts`) põe cada frase embaixo do campo e devolve o resto para a área de erros.
+- **Texto obrigatório** não aceita `""` nem só espaços (`400`, `code: "required"`) e é gravado sem os espaços das pontas: nome da clínica e do dono, nome de usuário, nome completo do paciente, nome de papel, nome de formulário de anamnese e rótulo de campo, descrição de cobrança e nome fantasia. Para limpar o nome fantasia, mande `null`.
 - Casos especiais com campos extras estão documentados em cada recurso (ex.: `removedPatientId`).
 
 | Status | Significado | O que o front faz |
@@ -251,12 +260,12 @@ Recomendação: chamar `/auth/me` ao abrir o app (com token salvo) e ao voltar o
 
 | Campo | Regra |
 |---|---|
-| `name` | obrigatório, até 150 |
-| `subdomain` | obrigatório, até 63, só `a-z`, `0-9` e `-`; único (`409` "Este subdomínio já está em uso") |
-| `customDomain` | opcional, domínio válido (FQDN), normalizado para minúsculas; único |
+| `name` | obrigatório (não vazio nem só espaços), até 150 |
+| `subdomain` | obrigatório, até 63, rótulo DNS `^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$` (minúsculas, números e hífen, sem hífen no começo nem no fim; fora disso `400` `matches`); único (`409` "Este subdomínio já está em uso"); fora dos reservados da plataforma (`www`, `api`, `app`, `admin`, `backoffice`, `plataforma`, `mail`, `docs`… e `RESERVED_SUBDOMAINS` por ambiente: `409` "Este subdomínio não está disponível") |
+| `customDomain` | opcional, domínio válido (FQDN), normalizado para minúsculas; único (`409` "Este domínio já está em uso"); não pode ser o domínio da plataforma nem um subdomínio dele (`409` "Este domínio não está disponível") |
 | `defaultAppointmentDurationMinutes` | opcional, inteiro 5–1440, padrão **30** |
 | `minAppointmentDurationMinutes` | opcional, inteiro 5–1440, padrão **5**; não pode ser maior que a duração padrão (`400`) |
-| `owner.name` / `owner.email` / `owner.password` | obrigatórios; senha ≥ 8; email único globalmente (`409`) |
+| `owner.name` / `owner.email` / `owner.password` | obrigatórios; nome não vazio; senha de 8 a 200; email único globalmente (`409`) |
 | `legalAcceptance` | **obrigatório** (LGPD): as versões vigentes de `GET /public/legal`; versão diferente → `400` (seção 17) |
 
 Cria numa transação: clínica + papel "Admin" + usuário dono. Resposta: `{ tenant, role: { id, name }, owner }`. **Não devolve token** — em seguida o front deve chamar `POST /auth/login` com as credenciais do dono.
@@ -266,7 +275,7 @@ Cria numa transação: clínica + papel "Admin" + usuário dono. Resposta: `{ te
 ### 5.2 Dados da clínica (`tenant:manage`)
 
 - `GET /tenants/:tenantId` → dados da clínica + `branding` (ou `null`) + `closureRequestedAt` (pedido de encerramento, seção 17).
-- `PATCH /tenants/:tenantId` → mesmos campos do signup, todos opcionais, **sem** `owner` e **sem** `status`.
+- `PATCH /tenants/:tenantId` → mesmos campos do signup, todos opcionais, **sem** `owner` e **sem** `status`. As regras de subdomínio e domínio próprio são as mesmas (inclusive os `409` de reservado).
   - `minAppointmentDurationMinutes` não pode ficar acima da duração padrão, nem acima da duração própria de algum profissional (`400` com a quantidade de profissionais afetados).
   - A clínica **não pode suspender a si mesma** (status é só pelo backoffice).
 
@@ -719,7 +728,9 @@ Toda resposta de cobrança (criar, listar, detalhe, editar) inclui `status`, `cr
 
 Só para usuários da clínica-plataforma (criados por script, nunca por signup).
 
-- `GET /platform/tenants?q&page&pageSize` → clínicas com `id, name, subdomain, customDomain, status, closureRequestedAt, createdAt, _count: { users, patients }`. Busca `q` em nome (sem acento/maiúsculas), subdomínio e domínio próprio; todas as palavras precisam casar. **Não há filtro por encerramento nem `deletionAvailableAt`** (proposta em `../bem-te-vi-api/docs/changes/17-encerramentos-no-painel-da-plataforma.md`).
+- `GET /platform/tenants?q&closure&page&pageSize` → clínicas com `id, name, subdomain, customDomain, status, closureRequestedAt, deletionAvailableAt, createdAt, _count: { users, patients }`. Busca `q` em nome (sem acento/maiúsculas), subdomínio e domínio próprio; todas as palavras precisam casar.
+  - `closure=requested`: só as que pediram o encerramento; `closure=deletable`: só as que já passaram da carência (exclusão aceita). Outro valor: `400`.
+  - `deletionAvailableAt`: a partir de quando o `DELETE` é aceito (pedido + `TENANT_DELETION_GRACE_DAYS`, padrão 30); `null` sem pedido. O front habilita o botão de exclusão só depois dessa data; a API confere de novo.
 - `DELETE /platform/tenants/:id` com `{ "confirmSubdomain": "..." }` → `204`: exclusão definitiva (seção 17).
 - `PATCH /platform/tenants/:id/status` com `{ "status": "active" | "suspended" }` → `{ id, name, status }`.
 - Suspender tem efeito imediato: usuários da clínica passam a receber `401`, o login falha e a marca pública dá `404`.
@@ -779,7 +790,10 @@ export type ISODateTime = string; // "2026-10-01T13:00:00.000Z"
 export type ISODate = string;     // "2026-10-01"
 
 export interface Page<T> { data: T[]; meta: { total: number; page: number; pageSize: number; totalPages: number } }
-export interface ApiError { statusCode: number; error: string; message: string | string[]; removedPatientId?: UUID }
+export interface ApiError {
+  statusCode: number; error: string; message: string | string[]; removedPatientId?: UUID;
+  errors?: { field: string; code: string; message: string }[]; // só nos 400 de validação
+}
 
 export type PermissionKey =
   | 'patients:read' | 'patients:write'
@@ -908,10 +922,12 @@ export interface ClosureState { closureRequestedAt: ISODateTime | null; deletion
 export type AuditAction =
   | 'patient.list' | 'patient.list_removed' | 'patient.view' | 'patient.create' | 'patient.update'
   | 'patient.delete' | 'patient.restore' | 'clinical_record.list' | 'clinical_record.create'
-  | 'patient.export' | 'tenant.export' | 'tenant.closure_requested' | 'tenant.closure_cancelled';
+  | 'patient.export' | 'tenant.export' | 'tenant.closure_requested' | 'tenant.closure_cancelled'
+  | 'auth.login_locked';
 export interface AuditLogEntry {
   id: UUID; action: AuditAction; patientId: UUID | null; actorUserId: UUID;
   actor: { id: UUID; name: string | null };            // name null = usuário apagado
+  patient: { id: UUID; fullName: string | null; removed: boolean } | null; // null = registro sem paciente
   entityType: string | null; entityId: UUID | null;
   details: Record<string, unknown> | null;               // ver tabela da seção 17
   ip: string | null; userAgent: string | null; createdAt: ISODateTime;
@@ -919,7 +935,8 @@ export interface AuditLogEntry {
 
 export interface PlatformTenant {
   id: UUID; name: string; subdomain: string; customDomain: string | null;
-  status: 'active' | 'suspended'; createdAt: ISODateTime; _count: { users: number; patients: number };
+  status: 'active' | 'suspended'; closureRequestedAt: ISODateTime | null; deletionAvailableAt: ISODateTime | null;
+  createdAt: ISODateTime; _count: { users: number; patients: number };
 }
 ```
 
@@ -946,11 +963,11 @@ Resumo; o contrato completo está nas tasks 08 a 11 da API (`../bem-te-vi-api/do
 - Versão nova publicada → todo mundo passa a ter aceite pendente (`pendingLegalDocuments` em `GET /auth/me`). O aceite é `POST /auth/me/legal-acceptances` com `{ termsVersion, privacyVersion }`, que devolve `{ pendingLegalDocuments }`. Quem bloqueia o uso até o aceite é o front.
 
 **Trilha de auditoria** — `GET /tenants/:tenantId/audit-logs?patientId&actorUserId&action&from&to&page&pageSize` (`audit:read`)
-- Registrada **automaticamente** pela API (o front não registra nada): leituras e alterações de paciente e ficha clínica, exportações e encerramento, com usuário, data, IP e navegador. Imutável; o conteúdo clínico nunca entra.
+- Registrada **automaticamente** pela API (o front não registra nada): leituras e alterações de paciente e ficha clínica, exportações, encerramento e bloqueio de conta por tentativas de login, com usuário, data, IP e navegador. Imutável; o conteúdo clínico nunca entra.
 - Paginada (padrão 20, máximo 100), do mais recente para o mais antigo. `from`/`to` em ISO 8601, inclusivos.
 - `audit:read` vem no Admin de clínica nova; nas clínicas existentes, só os papéis de administrador receberam.
 - **Abrir telas de paciente gera registros** (`patient.view`, `patient.list`, `clinical_record.list`). Evite buscas duplicadas ou desnecessárias desses endpoints.
-- A resposta traz `patientId`, mas **não o nome do paciente** (há proposta em `../bem-te-vi-api/docs/changes/16-nome-do-paciente-na-auditoria.md`).
+- Cada registro traz `patient: { id, fullName, removed }` (ou `null` se não é de paciente). `removed: true` = paciente removido (soft delete) ou apagado de vez (aí `fullName` vem `null`): a ficha não abre, então o front mostra o nome sem link. **Ler a trilha não gera `patient.view`**: é a forma de ver o nome sem registrar uma leitura de cadastro.
 
 | `action` | Rótulo | `details` |
 |---|---|---|
@@ -962,6 +979,7 @@ Resumo; o contrato completo está nas tasks 08 a 11 da API (`../bem-te-vi-api/do
 | `clinical_record.list` | Consultou as fichas de anamnese | `{ count }` |
 | `patient.export` / `tenant.export` | Exportou os dados do paciente / da clínica | — |
 | `tenant.closure_requested` / `tenant.closure_cancelled` | Pediu / cancelou o encerramento | — |
+| `auth.login_locked` | Conta bloqueada por tentativas de login (10 senhas erradas em 15 minutos) | — (o "usuário" é a própria conta bloqueada: `actorUserId` = `entityId`; sem paciente) |
 
 **Exportar dados do paciente** — `GET /tenants/:tenantId/patients/:id/export` (`patients:export`)
 - JSON com tudo o que a clínica guarda sobre o paciente (direito de acesso e portabilidade do titular), **inclusive de paciente removido**: `{ format: "bem-te-vi.patient-export", version, exportedAt, clinic: { name }, patient, clinicalRecords, appointments, charges }`.

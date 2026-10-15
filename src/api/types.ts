@@ -3,7 +3,11 @@ export type ISODateTime = string; // "2026-10-01T13:00:00.000Z"
 export type ISODate = string;     // "2026-10-01"
 
 export interface Page<T> { data: T[]; meta: { total: number; page: number; pageSize: number; totalPages: number } }
-export interface ApiError { statusCode: number; error: string; message: string | string[]; removedPatientId?: UUID }
+/** Corpo de erro da API. `errors`: um por campo nos `400` de validação (task 22), com o caminho no corpo ou na query. */
+export interface ApiError {
+  statusCode: number; error: string; message: string | string[]; removedPatientId?: UUID;
+  errors?: { field: string; code: string; message: string }[];
+}
 
 export type PermissionKey =
   | 'patients:read' | 'patients:write'
@@ -114,5 +118,7 @@ export interface BillingSummary {
 export interface PlatformTenant {
   id: UUID; name: string; subdomain: string; customDomain: string | null;
   status: 'active' | 'suspended'; closureRequestedAt: ISODateTime | null; createdAt: ISODateTime;
+  /** A partir de quando a exclusão definitiva é aceita (pedido + carência); null sem pedido. */
+  deletionAvailableAt: ISODateTime | null;
   _count: { users: number; patients: number };
 }

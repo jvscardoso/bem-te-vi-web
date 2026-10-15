@@ -54,7 +54,7 @@ function dayBoundary(dateKey: string | null, end: boolean): string | undefined {
 /**
  * Trilha de auditoria da clínica (LGPD): quem leu ou alterou dados de pacientes, exportações e
  * encerramento de conta. Só leitura. Filtros na URL, exceto o paciente: o nome dele não vai
- * para o endereço (dado pessoal) e a API não devolve o nome nos registros.
+ * para o endereço (dado pessoal).
  */
 export function AuditPage() {
   const tenantId = useTenantId();
@@ -244,7 +244,7 @@ export function AuditPage() {
                         )}
                       </TableCell>
                       <TableCell sx={hideOnMobile}>
-                        <PatientLink entry={entry} knownPatient={patient} />
+                        <PatientLink entry={entry} />
                       </TableCell>
                       <TableCell align="right">
                         <Tooltip title="Detalhes">
@@ -270,34 +270,33 @@ export function AuditPage() {
         )}
       </Paper>
 
-      {selected && <AuditEntryDialog entry={selected} knownPatient={patient} onClose={() => setSelected(null)} />}
+      {selected && <AuditEntryDialog entry={selected} onClose={() => setSelected(null)} />}
     </>
   );
 }
 
 /**
- * A API não devolve o nome do paciente na trilha, e buscá-lo geraria um novo registro de
- * "Visualizou o cadastro" para cada linha. Mostra o nome só quando já é conhecido (filtro).
+ * Nome do paciente, vindo junto com o registro (ler a trilha não gera "Visualizou o cadastro").
+ * Ficha que não abre (removido ou apagado de vez) aparece sem link.
  */
-function PatientLink({ entry, knownPatient }: { entry: AuditLogEntry; knownPatient: PatientOption | null }) {
-  if (!entry.patientId) return <>—</>;
-  const label = knownPatient?.id === entry.patientId ? knownPatient.fullName : 'Abrir ficha';
+function PatientLink({ entry }: { entry: AuditLogEntry }) {
+  const { patient } = entry;
+  if (!patient) return <>—</>;
+  if (patient.removed) {
+    return (
+      <Typography variant="body2" component="span" color="text.secondary">
+        {patient.fullName ? `${patient.fullName} (removido)` : 'Paciente excluído'}
+      </Typography>
+    );
+  }
   return (
-    <Link component={RouterLink} to={`/pacientes/${entry.patientId}`} underline="hover">
-      {label}
+    <Link component={RouterLink} to={`/pacientes/${patient.id}`} underline="hover">
+      {patient.fullName}
     </Link>
   );
 }
 
-function AuditEntryDialog({
-  entry,
-  knownPatient,
-  onClose,
-}: {
-  entry: AuditLogEntry;
-  knownPatient: PatientOption | null;
-  onClose: () => void;
-}) {
+function AuditEntryDialog({ entry, onClose }: { entry: AuditLogEntry; onClose: () => void }) {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const changes = entry.action === 'patient.update' ? describeChanges(entry) : null;
@@ -307,7 +306,7 @@ function AuditEntryDialog({
     ['Data e hora', formatDateTime(entry.createdAt)],
     ['Usuário', actorName(entry)],
     ['Ação', summary ? `${actionLabel(entry.action)} · ${summary}` : actionLabel(entry.action)],
-    ['Paciente', <PatientLink key="patient" entry={entry} knownPatient={knownPatient} />],
+    ['Paciente', <PatientLink key="patient" entry={entry} />],
     ['IP', entry.ip ?? '—'],
     ['Navegador', entry.userAgent ?? '—'],
   ];

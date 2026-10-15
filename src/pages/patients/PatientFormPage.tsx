@@ -12,11 +12,14 @@ import { ErrorMessages } from '@/components/ErrorMessages';
 import { PageHeader } from '@/components/PageHeader';
 import { SectionCard } from '@/components/SectionCard';
 import { useNotify } from '@/components/notifications/NotificationContext';
-import { isApiError } from '@/lib/errors';
+import { applyFieldErrors, isApiError } from '@/lib/errors';
 import { muiField } from '@/lib/form';
 import { maskCep, maskCpf, maskPhone } from '@/lib/masks';
 import { PatientNotFound } from './PatientNotFound';
-import { patientSchema, toFormValues, toPatientInput, type PatientFormValues } from './patientForm';
+import { ADDRESS_KEYS, patientSchema, toFormValues, toPatientInput, type PatientFormValues } from './patientForm';
+
+// Campos da tela com o mesmo caminho da API: o erro de validação dela aparece embaixo de cada um.
+const FORM_FIELDS = ['fullName', 'cpf', 'birthDate', 'phone', 'email', 'notes', ...ADDRESS_KEYS.map((key) => `address.${key}`)];
 
 /** Cadastro (/pacientes/novo) e edição (/pacientes/:id/editar). */
 export function PatientFormPage() {
@@ -50,11 +53,14 @@ function PatientForm({ patient }: { patient?: Patient }) {
   const queryClient = useQueryClient();
   const notify = useNotify();
   const [removedPatientId, setRemovedPatientId] = useState<string | null>(null);
+  // O que sobra para a área de erros depois de pôr os erros por campo nos campos.
+  const [areaError, setAreaError] = useState<unknown>(null);
 
   const {
     register,
     control,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm<PatientFormValues>({ resolver: zodResolver(patientSchema), defaultValues: toFormValues(patient) });
 
@@ -69,7 +75,9 @@ function PatientForm({ patient }: { patient?: Patient }) {
       notify(patient ? 'Paciente atualizado.' : 'Paciente cadastrado.');
       navigate(`/pacientes/${saved.id}`, { replace: true });
     },
+    onMutate: () => setAreaError(null),
     onError: (error) => {
+      setAreaError(applyFieldErrors(error, setError, FORM_FIELDS));
       // CPF de paciente removido: oferece restaurar o cadastro existente.
       if (!patient && isApiError(error, 409) && error.body?.removedPatientId) {
         setRemovedPatientId(error.body.removedPatientId);
@@ -88,7 +96,7 @@ function PatientForm({ patient }: { patient?: Patient }) {
   });
 
   const cancelPath = patient ? `/pacientes/${patient.id}` : '/pacientes';
-  const showSaveError = save.error && !removedPatientId;
+  const showSaveError = !!areaError && !removedPatientId;
 
   return (
     <Box sx={{ maxWidth: 960 }}>
@@ -197,7 +205,7 @@ function PatientForm({ patient }: { patient?: Patient }) {
           />
         </SectionCard>
 
-        {showSaveError && <ErrorMessages error={save.error} />}
+        {showSaveError && <ErrorMessages error={areaError} />}
 
         <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end' }}>
           <Button component={RouterLink} to={cancelPath} disabled={save.isPending}>

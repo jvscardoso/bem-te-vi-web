@@ -1,7 +1,11 @@
 import { api } from './client';
 import type { Page, PlatformTenant, UUID } from './types';
 
+/** `requested`: pediram o encerramento; `deletable`: já passaram da carência. Com filtro, a ordem é pela data do pedido. */
+export type ClosureFilter = 'requested' | 'deletable';
+
 export interface PlatformTenantListParams {
+  closure?: ClosureFilter;
   q?: string;
   page?: number;
   pageSize?: number;

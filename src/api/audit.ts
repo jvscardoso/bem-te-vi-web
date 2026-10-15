@@ -14,7 +14,8 @@ export type AuditAction =
   | 'patient.export'
   | 'tenant.export'
   | 'tenant.closure_requested'
-  | 'tenant.closure_cancelled';
+  | 'tenant.closure_cancelled'
+  | 'auth.login_locked';
 
 export interface AuditFieldChange {
   from: unknown;
@@ -25,6 +26,11 @@ export interface AuditLogEntry {
   id: UUID;
   action: AuditAction;
   patientId: UUID | null;
+  /**
+   * Paciente do registro (task 16 da API): null quando o registro não é de um paciente.
+   * `removed`: a ficha não abre (removido, ou apagado de vez: aí `fullName` vem null).
+   */
+  patient: { id: UUID; fullName: string | null; removed: boolean } | null;
   actorUserId: UUID;
   /** `name` é null se o usuário foi apagado do banco (o registro sobrevive a ele). */
   actor: { id: UUID; name: string | null };

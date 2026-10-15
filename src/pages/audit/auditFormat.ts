@@ -16,6 +16,7 @@ export const ACTION_LABELS: Record<AuditAction, string> = {
   'tenant.export': 'Exportou todos os dados da clínica',
   'tenant.closure_requested': 'Pediu o encerramento da conta',
   'tenant.closure_cancelled': 'Cancelou o encerramento da conta',
+  'auth.login_locked': 'Conta bloqueada por tentativas de login',
 };
 
 export const AUDIT_ACTIONS = Object.keys(ACTION_LABELS) as AuditAction[];

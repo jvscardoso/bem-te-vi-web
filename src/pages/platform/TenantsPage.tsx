@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router';
 import {
   Box,
   Button,
   Chip,
   LinearProgress,
+  MenuItem,
   Paper,
   Stack,
   Table,
@@ -13,9 +15,11 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
-import { platformApi, platformKeys, type TenantStatus } from '@/api/platform';
+import { platformApi, platformKeys, type ClosureFilter, type TenantStatus } from '@/api/platform';
 import type { PlatformTenant } from '@/api/types';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { EmptyState } from '@/components/EmptyState';
@@ -31,6 +35,12 @@ import { useListSearchParams } from '@/lib/useListSearchParams';
 const APP_BASE_DOMAIN = import.meta.env.VITE_APP_BASE_DOMAIN?.trim() || null;
 const hideOnMobile = { display: { xs: 'none', md: 'table-cell' } } as const;
 
+// Filtro de encerramento na URL (?encerramento=pedido|liberado), traduzido para o parâmetro da API.
+const CLOSURE_FILTERS: { param: string; value: ClosureFilter; label: string; empty: string }[] = [
+  { param: 'pedido', value: 'requested', label: 'Encerramento pedido', empty: 'Nenhuma clínica pediu o encerramento' },
+  { param: 'liberado', value: 'deletable', label: 'Prontas para excluir', empty: 'Nenhuma clínica pronta para excluir' },
+];
+
 const STATUS: Record<TenantStatus, { label: string; color: 'success' | 'error' }> = {
   active: { label: 'Ativa', color: 'success' },
   suspended: { label: 'Suspensa', color: 'error' },
@@ -41,7 +51,24 @@ export function TenantsPage() {
   const queryClient = useQueryClient();
   const notify = useNotify();
   const list = useListSearchParams();
-  const params = { q: list.q || undefined, page: list.page, pageSize: list.pageSize };
+  const [searchParams, setSearchParams] = useSearchParams();
+  const closureFilter = CLOSURE_FILTERS.find((item) => item.param === searchParams.get('encerramento'));
+  const params = { q: list.q || undefined, closure: closureFilter?.value, page: list.page, pageSize: list.pageSize };
+  // Momento de referência para "a carência já passou" (React Compiler exige render puro).
+  const [now] = useState(() => Date.now());
+
+  // Trocar o filtro volta para a primeira página.
+  const setClosureFilter = (param: string) =>
+    setSearchParams(
+      (previous) => {
+        const next = new URLSearchParams(previous);
+        next.delete('page');
+        if (param) next.set('encerramento', param);
+        else next.delete('encerramento');
+        return next;
+      },
+      { replace: true },
+    );
   const [pending, setPending] = useState<{ tenant: PlatformTenant; status: TenantStatus } | null>(null);
   const [deleting, setDeleting] = useState<PlatformTenant | null>(null);
 
@@ -71,7 +98,7 @@ export function TenantsPage() {
       />
 
       <Paper variant="outlined">
-        <Stack sx={{ p: 2 }}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ p: 2 }}>
           <SearchField
             value={list.search}
             onChange={list.setSearch}
@@ -79,6 +106,23 @@ export function TenantsPage() {
             autoFocus
             sx={{ maxWidth: { sm: 420 } }}
           />
+          <TextField
+            select
+            size="small"
+            label="Encerramento"
+            value={closureFilter?.param ?? ''}
+            onChange={(event) => setClosureFilter(event.target.value)}
+            fullWidth={false}
+            sx={{ minWidth: 220 }}
+            slotProps={{ inputLabel: { shrink: true }, select: { displayEmpty: true } }}
+          >
+            <MenuItem value="">Todas as clínicas</MenuItem>
+            {CLOSURE_FILTERS.map((item) => (
+              <MenuItem key={item.param} value={item.param}>
+                {item.label}
+              </MenuItem>
+            ))}
+          </TextField>
         </Stack>
         <Box sx={{ height: 4 }}>{query.isFetching && <LinearProgress />}</Box>
 
@@ -88,7 +132,9 @@ export function TenantsPage() {
           </Box>
         ) : query.data?.data.length === 0 ? (
           <EmptyState
-            title={list.q ? 'Nenhuma clínica encontrada' : 'Nenhuma clínica cadastrada'}
+            title={
+              list.q ? 'Nenhuma clínica encontrada' : (closureFilter?.empty ?? 'Nenhuma clínica cadastrada')
+            }
             description={list.q ? `Nenhum resultado para "${list.q}".` : undefined}
           />
         ) : (
@@ -112,6 +158,8 @@ export function TenantsPage() {
               <TableBody>
                 {query.data?.data.map((tenant) => {
                   const status = STATUS[tenant.status];
+                  const deletionAt = tenant.deletionAvailableAt ? new Date(tenant.deletionAvailableAt).getTime() : null;
+                  const deletable = deletionAt !== null && deletionAt <= now;
                   return (
                     <TableRow key={tenant.id} hover>
                       <TableCell sx={{ fontWeight: 500 }}>{tenant.name}</TableCell>
@@ -131,9 +179,18 @@ export function TenantsPage() {
                           {tenant.closureRequestedAt && (
                             <Chip
                               size="small"
-                              color="warning"
-                              label={`Encerramento pedido em ${formatDate(tenant.closureRequestedAt)}`}
+                              color={deletable ? 'error' : 'warning'}
+                              label={
+                                deletable
+                                  ? 'Pronta para excluir'
+                                  : `Encerramento pedido em ${formatDate(tenant.closureRequestedAt)}`
+                              }
                             />
+                          )}
+                          {tenant.closureRequestedAt && !deletable && tenant.deletionAvailableAt && (
+                            <Typography variant="caption" color="text.secondary">
+                              Exclusão liberada a partir de {formatDate(tenant.deletionAvailableAt)}
+                            </Typography>
                           )}
                         </Stack>
                       </TableCell>
@@ -145,11 +202,27 @@ export function TenantsPage() {
                       </TableCell>
                       <TableCell sx={{ ...hideOnMobile, whiteSpace: 'nowrap' }}>{formatDate(tenant.createdAt)}</TableCell>
                       <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                        {/* Só clínica que pediu o encerramento; a carência é conferida pela API. */}
+                        {/* Só clínica que pediu o encerramento, e só depois da carência. A API confere de
+                            novo (409): o pedido pode ter sido cancelado com a tela aberta. */}
                         {tenant.closureRequestedAt && (
-                          <Button size="small" color="error" onClick={() => setDeleting(tenant)}>
-                            Excluir definitivamente
-                          </Button>
+                          <Tooltip
+                            title={
+                              deletable || !tenant.deletionAvailableAt
+                                ? ''
+                                : `Liberada a partir de ${formatDate(tenant.deletionAvailableAt)}`
+                            }
+                          >
+                            <span>
+                              <Button
+                                size="small"
+                                color="error"
+                                disabled={!deletable}
+                                onClick={() => setDeleting(tenant)}
+                              >
+                                Excluir definitivamente
+                              </Button>
+                            </span>
+                          </Tooltip>
                         )}
                         {tenant.status === 'active' ? (
                           <Button size="small" color="error" onClick={() => setPending({ tenant, status: 'suspended' })}>

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -28,6 +29,7 @@ import { isRoleAbove } from '@/auth/privileges';
 import { ErrorMessages } from '@/components/ErrorMessages';
 import { PasswordField } from '@/components/PasswordField';
 import { useNotify } from '@/components/notifications/NotificationContext';
+import { applyFieldErrors } from '@/lib/errors';
 import { PasswordGenerator } from './PasswordGenerator';
 import { USER_STATUS } from './userStatus';
 
@@ -68,6 +70,7 @@ export function UserDialog({ user, roles, readOnly, onClose, onResetPassword }: 
     control,
     handleSubmit,
     setValue,
+    setError,
     formState: { dirtyFields },
   } = useForm<FormValues>({
     defaultValues: {
@@ -84,6 +87,8 @@ export function UserDialog({ user, roles, readOnly, onClose, onResetPassword }: 
   const roleId = useWatch({ control, name: 'roleId' });
   const status = useWatch({ control, name: 'status' });
   const access = useWatch({ control, name: 'access' });
+  // O que sobra para a área de erros depois de pôr os erros por campo nos campos.
+  const [areaError, setAreaError] = useState<unknown>(null);
   // A duração própria só vale para quem atende (`appointments:attend`). Com a lista de papéis
   // (roles:manage), segue o papel escolhido no formulário; sem ela, o que a API diz do usuário.
   // Na criação sem a lista, mostra: a API aceita e ignora para quem não atende.
@@ -117,6 +122,13 @@ export function UserDialog({ user, roles, readOnly, onClose, onResetPassword }: 
       if (attends && dirtyFields.duration) update.defaultAppointmentDurationMinutes = duration;
       return usersApi.update(tenantId, user.id, update);
     },
+    onMutate: () => setAreaError(null),
+    onError: (error) =>
+      setAreaError(
+        applyFieldErrors(error, setError, ['name', 'email', 'password', 'roleId', 'status'], {
+          defaultAppointmentDurationMinutes: 'duration',
+        }),
+      ),
     onSuccess: (saved) => {
       void queryClient.invalidateQueries({ queryKey: usersKeys.all(tenantId) });
       void queryClient.invalidateQueries({ queryKey: usersKeys.professionals(tenantId) });
@@ -331,9 +343,9 @@ export function UserDialog({ user, roles, readOnly, onClose, onResetPassword }: 
         </Stack>
       </DialogContent>
 
-      {(save.error || resendInvite.error) && (
+      {(areaError || resendInvite.error) && (
         <Box sx={{ px: 3, pt: 2 }}>
-          <ErrorMessages error={save.error ?? resendInvite.error} />
+          <ErrorMessages error={areaError ?? resendInvite.error} />
         </Box>
       )}
 
