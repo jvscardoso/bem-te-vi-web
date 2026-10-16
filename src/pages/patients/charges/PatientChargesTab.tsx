@@ -34,7 +34,7 @@ export function PatientChargesTab({ patient }: { patient: Patient }) {
   );
 
   return (
-    <Stack spacing={2} sx={{ maxWidth: 960 }}>
+    <Stack spacing={2}>
       {query.data && query.data.meta.total > 0 && <Stack direction="row" sx={{ justifyContent: 'flex-end' }}>{newButton}</Stack>}
       <Paper variant="outlined">
         <Box sx={{ height: 4 }}>{query.isFetching && <LinearProgress />}</Box>

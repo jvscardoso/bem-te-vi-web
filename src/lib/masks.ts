@@ -11,6 +11,13 @@ export function maskCpf(value: string): string {
   return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
 }
 
+/** CPF até 11 dígitos; a partir do 12º, CNPJ "11.222.333/0001-81" (parcial enquanto digita). */
+export function maskCpfCnpj(value: string): string {
+  const d = digits(value).slice(0, 14);
+  if (d.length <= 11) return maskCpf(d);
+  return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
+}
+
 /** Celular "(11) 91234-5678" ou fixo "(11) 1234-5678" */
 export function maskPhone(value: string): string {
   const d = digits(value).slice(0, 11);

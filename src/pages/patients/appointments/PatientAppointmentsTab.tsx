@@ -73,7 +73,7 @@ export function PatientAppointmentsTab({ patient }: { patient: Patient }) {
   const past = query.data.filter((item) => new Date(item.endsAt).getTime() < now).reverse();
 
   return (
-    <Stack spacing={3} sx={{ maxWidth: 960 }}>
+    <Stack spacing={3}>
       <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
         {/* Sem appointments:all a API devolve só os agendamentos do próprio usuário. */}
         {!can('appointments:all') ? (

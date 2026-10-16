@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { type QueryClient, useQuery, useQueryClient } from '@tanstack/react-query';
 import { authApi } from '@/api/auth';
-import { refreshSession } from '@/api/client';
+import { onSubscriptionRestricted, refreshSession } from '@/api/client';
 import { AuthContext, type AuthContextValue, type AuthStatus } from './AuthContext';
-import { hasPermissions } from './permissions';
+import { hasPermissions, withoutWritePermissions } from './permissions';
 import { session } from './session';
 
 const meQueryKey = ['auth', 'me'] as const;
 
 /** Chaves de cache que não pertencem ao usuário logado (ex.: marca pública). */
-const PUBLIC_QUERY_ROOTS = new Set<unknown>(['public-branding']);
+const PUBLIC_QUERY_ROOTS = new Set<unknown>(['public-branding', 'public-plans']);
 
 function clearUserData(queryClient: QueryClient) {
   queryClient.cancelQueries({ predicate: (query) => !PUBLIC_QUERY_ROOTS.has(query.queryKey[0]) });
@@ -49,6 +49,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     retry: false,
   });
 
+  // 402 de assinatura com o app aberto: relê a situação para os avisos e botões acompanharem.
+  useEffect(
+    () => onSubscriptionRestricted(() => void queryClient.invalidateQueries({ queryKey: meQueryKey })),
+    [queryClient],
+  );
+
   // Sem sessão, nada do usuário anterior pode ficar em cache.
   useEffect(() => {
     if (token === null) clearUserData(queryClient);
@@ -84,6 +90,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   else if (error) status = 'error';
   else status = 'loading';
 
+  const subscription = user?.subscription ?? null;
+  const readOnly = subscription?.access === 'read_only';
+  const effectivePermissions = useMemo(
+    () => (user ? (readOnly ? withoutWritePermissions(user.permissions) : user.permissions) : []),
+    [user, readOnly],
+  );
+
   const value = useMemo<AuthContextValue>(
     () => ({
       status,
@@ -93,9 +106,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       replaceToken,
       refresh: refetch,
-      can: (required) => (user ? hasPermissions(user.permissions, required) : false),
+      can: (required) => (user ? hasPermissions(effectivePermissions, required) : false),
+      hasRole: (required) => (user ? hasPermissions(user.permissions, required) : false),
+      subscription,
+      readOnly,
     }),
-    [status, user, error, login, logout, replaceToken, refetch],
+    [status, user, error, login, logout, replaceToken, refetch, effectivePermissions, subscription, readOnly],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

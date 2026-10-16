@@ -30,6 +30,8 @@ import { SearchField } from '@/components/SearchField';
 import { useNotify } from '@/components/notifications/NotificationContext';
 import { TableSkeletonRows } from '@/components/TableSkeletonRows';
 import { formatDate } from '@/lib/format';
+import { ACCESS_LABELS, CYCLE_LABELS, STATUS_LABELS } from '@/pages/settings/subscription/subscriptionText';
+import { usePlans } from '@/pages/settings/subscription/useSubscription';
 import { DeleteTenantDialog } from './DeleteTenantDialog';
 import { useListSearchParams } from '@/lib/useListSearchParams';
 
@@ -72,6 +74,9 @@ export function TenantsPage() {
     );
   const [pending, setPending] = useState<{ tenant: PlatformTenant; status: TenantStatus } | null>(null);
   const [deleting, setDeleting] = useState<PlatformTenant | null>(null);
+
+  const plans = usePlans();
+  const planName = (id: string) => plans.data?.data.find((plan) => plan.id === id)?.name ?? id;
 
   const query = useQuery({
     queryKey: platformKeys.list(params),
@@ -146,6 +151,7 @@ export function TenantsPage() {
                   <TableCell>Clínica</TableCell>
                   <TableCell sx={hideOnMobile}>Endereço</TableCell>
                   <TableCell>Situação</TableCell>
+                  <TableCell>Assinatura</TableCell>
                   <TableCell align="right" sx={hideOnMobile}>
                     Usuários
                   </TableCell>
@@ -159,7 +165,7 @@ export function TenantsPage() {
               <TableBody>
                 {query.isPending && (
                   <TableSkeletonRows
-                    columns={[undefined, hideOnMobile, undefined, hideOnMobile, hideOnMobile, hideOnMobile, undefined]}
+                    columns={[undefined, hideOnMobile, undefined, undefined, hideOnMobile, hideOnMobile, hideOnMobile, undefined]}
                   />
                 )}
                 {query.data?.data.map((tenant) => {
@@ -199,6 +205,9 @@ export function TenantsPage() {
                             </Typography>
                           )}
                         </Stack>
+                      </TableCell>
+                      <TableCell>
+                        <SubscriptionCell subscription={tenant.subscription} planName={planName} />
                       </TableCell>
                       <TableCell align="right" sx={hideOnMobile}>
                         {tenant._count.users}
@@ -289,5 +298,46 @@ export function TenantsPage() {
         }}
       />
     </>
+  );
+}
+
+/** Plano, ciclo e situação da assinatura; só leitura e bloqueio em destaque. */
+function SubscriptionCell({
+  subscription,
+  planName,
+}: {
+  subscription: PlatformTenant['subscription'];
+  planName: (id: string) => string;
+}) {
+  if (!subscription) return <>—</>;
+  const status = STATUS_LABELS[subscription.status];
+  const access = ACCESS_LABELS[subscription.access];
+  let detail: string | null = null;
+  if (subscription.status === 'trialing' && subscription.trialEndsAt) detail = `Teste até ${formatDate(subscription.trialEndsAt)}`;
+  else if (subscription.status === 'past_due' && subscription.pastDueSince) detail = `Em atraso desde ${formatDate(subscription.pastDueSince)}`;
+  else if (subscription.currentPeriodEnd) detail = `Pago até ${formatDate(subscription.currentPeriodEnd)}`;
+
+  return (
+    <Stack spacing={0.5} sx={{ alignItems: 'flex-start' }}>
+      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+        {planName(subscription.planId)}
+        {subscription.contractedAt && (
+          <Typography component="span" variant="body2" color="text.secondary">
+            {' '}
+            · {CYCLE_LABELS[subscription.cycle]}
+          </Typography>
+        )}
+      </Typography>
+      <Stack direction="row" sx={{ gap: 0.5, flexWrap: 'wrap' }}>
+        <Chip size="small" variant="outlined" label={status.label} color={status.color} />
+        {access && <Chip size="small" label={access.label} color={access.color} />}
+      </Stack>
+      {detail && (
+        <Typography variant="caption" color="text.secondary">
+          {detail}
+          {subscription.status === 'trialing' && !subscription.contractedAt && ' · sem contrato'}
+        </Typography>
+      )}
+    </Stack>
   );
 }

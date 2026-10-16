@@ -11,6 +11,7 @@ import { GeneralTab } from './GeneralTab';
 import { HomeLayoutTab } from './HomeLayoutTab';
 import { ScheduleTab } from './ScheduleTab';
 import { ClosureTab } from './closure/ClosureTab';
+import { SubscriptionTab } from './subscription/SubscriptionTab';
 
 const TABS = [
   { value: 'dados', label: 'Dados' },
@@ -18,6 +19,7 @@ const TABS = [
   { value: 'marca', label: 'Marca' },
   { value: 'dominio', label: 'Domínio próprio' },
   { value: 'tela-inicial', label: 'Tela inicial' },
+  { value: 'assinatura', label: 'Assinatura' },
   { value: 'encerrar', label: 'Encerrar conta' },
 ] as const;
 
@@ -33,8 +35,7 @@ export function SettingsPage() {
   const query = useQuery({ queryKey: tenantKeys.detail(tenantId), queryFn: () => tenantsApi.get(tenantId) });
 
   return (
-    // A tela inicial precisa da largura toda: a prévia mostra os blocos com a largura real.
-    <Box sx={{ maxWidth: tab === 'tela-inicial' ? undefined : 880 }}>
+    <Box>
       <PageHeader title="Configurações da clínica" />
       <Tabs
         value={tab}
@@ -60,6 +61,7 @@ export function SettingsPage() {
           {tab === 'marca' && <BrandingTab tenant={query.data} />}
           {tab === 'dominio' && <DomainTab tenant={query.data} />}
           {tab === 'tela-inicial' && <HomeLayoutTab />}
+          {tab === 'assinatura' && <SubscriptionTab />}
           {tab === 'encerrar' && <ClosureTab />}
         </Box>
       )}

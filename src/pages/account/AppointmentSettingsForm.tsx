@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { Alert, Box, Button, InputAdornment, Skeleton, Stack, TextField } from '@mui/material';
 import type { UUID } from '@/api/types';
 import { usersApi, usersKeys } from '@/api/users';
+import { useAuth } from '@/auth/AuthContext';
 import { ErrorMessages } from '@/components/ErrorMessages';
 import { useNotify } from '@/components/notifications/NotificationContext';
 import { muiField } from '@/lib/form';
@@ -22,6 +23,8 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export function AppointmentSettingsForm({ tenantId, userId }: { tenantId: UUID; userId: UUID }) {
+  // Assinatura em só leitura: a API recusaria (402).
+  const { readOnly } = useAuth();
   const queryClient = useQueryClient();
   const notify = useNotify();
 
@@ -80,7 +83,7 @@ export function AppointmentSettingsForm({ tenantId, userId }: { tenantId: UUID; 
       />
       <ErrorMessages error={mutation.error} />
       <Box>
-        <Button type="submit" variant="contained" disabled={!isDirty} loading={mutation.isPending}>
+        <Button type="submit" variant="contained" disabled={!isDirty || readOnly} loading={mutation.isPending}>
           Salvar
         </Button>
       </Box>

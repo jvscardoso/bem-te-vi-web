@@ -117,6 +117,12 @@ Definido em `src/router.tsx` com `createBrowserRouter`.
 - `appointments:all`: sem ela, a agenda, o novo agendamento, o painel e a aba de agendamentos do paciente trabalham só com o próprio usuário (sem seletor de profissional).
 - Regras de conta (`auth/privileges.ts`): `isRoleAbove` / `missingPermissions` desabilitam papéis e usuários "acima" do ator; `isAdminRole` / `ADMIN_PERMISSIONS` apoiam a regra do último administrador. Detalhes na seção 4.3 das regras.
 - Usuário com `platform:manage` só vê o backoffice (`ClinicAreaOnly`, `HomeRedirect`).
+- **Assinatura da clínica** (task 31): `useAuth()` dá `subscription` (do `/auth/me`) e `readOnly` (`access === 'read_only'`).
+  - Em só leitura, o `can()` deixa de reconhecer `patients:write`, `appointments:write` e `billing:write` (`withoutWritePermissions` em `auth/permissions.ts`): tudo o que já dependia delas some sozinho. `hasRole()` dá as permissões do papel, sem a assinatura; o `RequirePermission` usa isso para mostrar "Modo só leitura" (e não "Acesso negado") numa tela que só serve para alterar dados.
+  - As permissões de administração (`users:manage`, `roles:manage`, `anamnesis_templates:manage`, `tenant:manage`) também abrem telas de consulta, então continuam valendo: cada tela desabilita as próprias ações com `readOnly`. **Ação nova que altera dados numa tela dessas precisa olhar `readOnly`.**
+  - `access === 'blocked'`: o `RequireAuth` mostra a `SubscriptionBlockedScreen` no lugar do app (contratar, exportar, sair).
+  - `402` com `code` `subscription_*`: o `client.ts` avisa (`onSubscriptionRestricted`) e o `AuthProvider` relê o `/auth/me`; nunca desloga. A mensagem da API aparece na área de erros do formulário.
+  - Aviso no topo (`SubscriptionBanner`, no `ShellLayout`) para todo usuário; "Contratar" só com `tenant:manage`. Tela em Configurações › Assinatura (`src/pages/settings/subscription/`).
 
 ## Tela inicial configurável
 

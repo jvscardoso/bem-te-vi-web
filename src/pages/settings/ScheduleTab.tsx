@@ -4,6 +4,7 @@ import { Box, Button, InputAdornment, Stack, TextField } from '@mui/material';
 import { tenantKeys, tenantsApi } from '@/api/tenants';
 import type { Tenant } from '@/api/types';
 import { usersKeys } from '@/api/users';
+import { useAuth } from '@/auth/AuthContext';
 import { ErrorMessages } from '@/components/ErrorMessages';
 import { SectionCard } from '@/components/SectionCard';
 import { useNotify } from '@/components/notifications/NotificationContext';
@@ -18,6 +19,8 @@ const minutesRule = (value: string) =>
   /^\d+$/.test(value) && Number(value) >= 5 && Number(value) <= 1440 ? true : 'Informe um número inteiro entre 5 e 1440';
 
 export function ScheduleTab({ tenant }: { tenant: Tenant }) {
+  // Assinatura em só leitura: a API recusaria (402).
+  const { readOnly } = useAuth();
   const queryClient = useQueryClient();
   const notify = useNotify();
 
@@ -86,7 +89,7 @@ export function ScheduleTab({ tenant }: { tenant: Tenant }) {
       {/* Ex.: mínimo acima da duração própria de algum profissional (a API informa quantos). */}
       <ErrorMessages error={save.error} />
       <Box>
-        <Button type="submit" variant="contained" disabled={!isDirty} loading={save.isPending}>
+        <Button type="submit" variant="contained" disabled={!isDirty || readOnly} loading={save.isPending}>
           Salvar
         </Button>
       </Box>

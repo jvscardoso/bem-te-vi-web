@@ -4,7 +4,7 @@ import { Link as RouterLink } from 'react-router';
 import { Box, Button, ListItemText, Menu, MenuItem, Paper, Skeleton, Stack, Typography } from '@mui/material';
 import AddOutlined from '@mui/icons-material/AddOutlined';
 import { configsApi, configsKeys, EMPTY_CONFIGS, type LayoutWidget, type ScreenLayout, type TenantConfigs } from '@/api/configs';
-import { useTenantId } from '@/auth/AuthContext';
+import { useAuth, useTenantId } from '@/auth/AuthContext';
 import { ErrorMessages } from '@/components/ErrorMessages';
 import { useNotify } from '@/components/notifications/NotificationContext';
 import { formatDateTime } from '@/lib/format';
@@ -24,6 +24,8 @@ export function HomeLayoutTab() {
 }
 
 function HomeLayoutEditor({ saved, savedWidgets }: { saved: ScreenLayout | null; savedWidgets: LayoutWidget[] }) {
+  // Assinatura em só leitura: a API recusaria (402).
+  const { readOnly } = useAuth();
   const tenantId = useTenantId();
   const queryClient = useQueryClient();
   const notify = useNotify();
@@ -92,7 +94,7 @@ function HomeLayoutEditor({ saved, savedWidgets }: { saved: ScreenLayout | null;
             <Button onClick={() => change(savedWidgets)} disabled={!dirty || save.isPending}>
               Descartar alterações
             </Button>
-            <Button variant="contained" loading={save.isPending} disabled={!dirty} onClick={() => save.mutate(draft)}>
+            <Button variant="contained" loading={save.isPending} disabled={!dirty || readOnly} onClick={() => save.mutate(draft)}>
               Salvar
             </Button>
           </Stack>

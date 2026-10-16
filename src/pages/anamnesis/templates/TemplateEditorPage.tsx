@@ -36,7 +36,7 @@ import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined';
 import { anamnesisApi, anamnesisKeys, FIELD_TYPE_LABELS, typeHasOptions } from '@/api/anamnesis';
 import { ApiError } from '@/api/client';
 import type { AnamnesisTemplate } from '@/api/types';
-import { useTenantId } from '@/auth/AuthContext';
+import { useAuth, useTenantId } from '@/auth/AuthContext';
 import { ErrorMessages } from '@/components/ErrorMessages';
 import { PageHeader } from '@/components/PageHeader';
 import { SectionCard } from '@/components/SectionCard';
@@ -87,6 +87,8 @@ export function TemplateEditorPage() {
 }
 
 function TemplateEditor({ template }: { template?: AnamnesisTemplate }) {
+  // Assinatura em só leitura: a API recusaria (402).
+  const { readOnly } = useAuth();
   const tenantId = useTenantId();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -201,7 +203,7 @@ function TemplateEditor({ template }: { template?: AnamnesisTemplate }) {
           <Button component={RouterLink} to="/anamnese/formularios" disabled={save.isPending}>
             Cancelar
           </Button>
-          <Button type="submit" variant="contained" loading={save.isPending}>
+          <Button type="submit" variant="contained" loading={save.isPending} disabled={readOnly}>
             {template ? 'Salvar alterações' : 'Criar formulário'}
           </Button>
         </Stack>

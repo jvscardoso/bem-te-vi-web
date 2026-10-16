@@ -34,6 +34,7 @@ import { isPlatformUser } from '@/auth/permissions';
 import { BrandMark } from '@/components/BrandMark';
 import { useColorMode } from '@/theme/colorMode';
 import { ClosureBanner } from '@/pages/settings/closure/ClosureBanner';
+import { SubscriptionBanner } from '@/pages/settings/subscription/SubscriptionBanner';
 import type { NavSection } from './navigation';
 
 const DRAWER_WIDTH = 260;
@@ -183,6 +184,7 @@ export function ShellLayout({ navigation, areaLabel, search }: ShellLayoutProps)
 
       <Box component="main" sx={{ flexGrow: 1, minWidth: 0, p: { xs: 2, sm: 3 } }}>
         <Toolbar />
+        <SubscriptionBanner />
         <ClosureBanner />
         <Outlet />
       </Box>

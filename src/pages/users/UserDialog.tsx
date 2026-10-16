@@ -57,7 +57,9 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function UserDialog({ user, roles, readOnly, onClose, onResetPassword }: UserDialogProps) {
   const tenantId = useTenantId();
-  const { user: me, refresh } = useAuth();
+  const { user: me, refresh, readOnly: subscriptionReadOnly } = useAuth();
+  // Sem poder salvar: usuário acima de quem edita, ou clínica em só leitura (assinatura).
+  const locked = readOnly || subscriptionReadOnly;
   const queryClient = useQueryClient();
   const notify = useNotify();
   const theme = useTheme();
@@ -154,13 +156,16 @@ export function UserDialog({ user, roles, readOnly, onClose, onResetPassword }: 
 
   return (
     <Dialog open onClose={save.isPending ? undefined : onClose} fullWidth maxWidth="sm" fullScreen={fullScreen}>
-      <DialogTitle>{user ? (readOnly ? 'Usuário' : 'Editar usuário') : 'Novo usuário'}</DialogTitle>
+      <DialogTitle>{user ? (locked ? 'Usuário' : 'Editar usuário') : 'Novo usuário'}</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2.5} component="form" id="user-form" onSubmit={handleSubmit((v) => save.mutate(v))} noValidate>
           {readOnly && (
             <Alert severity="info">
               Este usuário tem permissões que você não tem. Só um administrador com essas permissões pode alterá-lo.
             </Alert>
+          )}
+          {subscriptionReadOnly && (
+            <Alert severity="warning">A clínica está em modo só leitura: as alterações voltam com a assinatura regularizada.</Alert>
           )}
 
           <Controller
@@ -173,7 +178,7 @@ export function UserDialog({ user, roles, readOnly, onClose, onResetPassword }: 
                 autoFocus={!user}
                 {...field}
                 inputRef={field.ref}
-                disabled={readOnly}
+                disabled={locked}
                 error={!!fieldState.error}
                 helperText={fieldState.error?.message}
               />
@@ -189,7 +194,7 @@ export function UserDialog({ user, roles, readOnly, onClose, onResetPassword }: 
                 type="email"
                 {...field}
                 inputRef={field.ref}
-                disabled={readOnly}
+                disabled={locked}
                 error={!!fieldState.error}
                 helperText={fieldState.error?.message ?? 'Único em toda a plataforma.'}
               />
@@ -206,7 +211,7 @@ export function UserDialog({ user, roles, readOnly, onClose, onResetPassword }: 
                 label="Papel"
                 {...field}
                 inputRef={field.ref}
-                disabled={readOnly || !roles}
+                disabled={locked || !roles}
                 // No campo, só o nome (a descrição aparece apenas na lista de opções).
                 slotProps={{ select: { renderValue: (value) => roles?.find((role) => role.id === value)?.name ?? '' } }}
                 error={!!fieldState.error}
@@ -247,7 +252,7 @@ export function UserDialog({ user, roles, readOnly, onClose, onResetPassword }: 
                   label="Situação"
                   {...field}
                   inputRef={field.ref}
-                  disabled={readOnly}
+                  disabled={locked}
                   helperText={USER_STATUS[field.value].hint}
                 >
                   {statusOptions.map((status) => (
@@ -277,7 +282,7 @@ export function UserDialog({ user, roles, readOnly, onClose, onResetPassword }: 
                   placeholder="Padrão da clínica"
                   {...field}
                   inputRef={field.ref}
-                  disabled={readOnly}
+                  disabled={locked}
                   error={!!fieldState.error}
                   helperText={fieldState.error?.message ?? 'Deixe em branco para usar o padrão da clínica.'}
                   slotProps={{
@@ -351,7 +356,7 @@ export function UserDialog({ user, roles, readOnly, onClose, onResetPassword }: 
 
       <DialogActions sx={{ px: 3, py: 2 }}>
         {/* Convidado ainda não tem senha: redefinir não o ativaria. O caminho é reenviar o convite. */}
-        {user && !readOnly && user.status === 'invited' && (
+        {user && !locked && user.status === 'invited' && (
           <Button
             onClick={() => resendInvite.mutate()}
             loading={resendInvite.isPending}
@@ -361,15 +366,15 @@ export function UserDialog({ user, roles, readOnly, onClose, onResetPassword }: 
             Reenviar convite
           </Button>
         )}
-        {user && !readOnly && !isSelf && user.status !== 'invited' && onResetPassword && (
+        {user && !locked && !isSelf && user.status !== 'invited' && onResetPassword && (
           <Button onClick={onResetPassword} sx={{ mr: 'auto' }} disabled={save.isPending}>
             Redefinir senha
           </Button>
         )}
         <Button onClick={onClose} disabled={save.isPending}>
-          {readOnly ? 'Fechar' : 'Cancelar'}
+          {locked ? 'Fechar' : 'Cancelar'}
         </Button>
-        {!readOnly && (
+        {!locked && (
           <Button type="submit" form="user-form" variant="contained" loading={save.isPending}>
             {user ? 'Salvar' : 'Criar usuário'}
           </Button>

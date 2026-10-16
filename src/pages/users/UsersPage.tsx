@@ -40,7 +40,7 @@ const hideOnMobile = { display: { xs: 'none', md: 'table-cell' } } as const;
 /** /usuarios — exige users:manage. Não há exclusão: desativa-se o usuário. */
 export function UsersPage() {
   const tenantId = useTenantId();
-  const { user: me, can } = useAuth();
+  const { user: me, can, readOnly } = useAuth();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [dialog, setDialog] = useState<DialogState>(null);
@@ -76,7 +76,7 @@ export function UsersPage() {
             variant="contained"
             startIcon={<PersonAddAlt1Outlined />}
             onClick={() => setDialog({ kind: 'create' })}
-            disabled={!canReadRoles}
+            disabled={!canReadRoles || readOnly}
           >
             Novo usuário
           </Button>

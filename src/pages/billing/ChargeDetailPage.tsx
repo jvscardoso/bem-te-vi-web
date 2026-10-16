@@ -79,7 +79,7 @@ export function ChargeDetailPage() {
   const editable = canEditCharge(charge);
 
   return (
-    <Box sx={{ maxWidth: 960 }}>
+    <Box>
       <Button component={RouterLink} to="/financeiro" startIcon={<ArrowBack />} size="small" sx={{ mb: 1 }}>
         Financeiro
       </Button>

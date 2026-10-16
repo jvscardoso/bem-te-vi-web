@@ -72,6 +72,21 @@ function messagesFor(status: number, body: ApiErrorBody | null): string[] {
   return ['Não foi possível concluir a operação.'];
 }
 
+// 402 da assinatura (task 31): a clínica entrou em só leitura ou foi bloqueada com o app aberto.
+// Quem escuta (o AuthProvider) relê o /auth/me para os avisos e os botões acompanharem. Não é
+// sessão inválida: nunca desloga.
+const subscriptionListeners = new Set<() => void>();
+
+export function onSubscriptionRestricted(listener: () => void): () => void {
+  subscriptionListeners.add(listener);
+  return () => subscriptionListeners.delete(listener);
+}
+
+/** O erro é o 402 de assinatura em só leitura ou bloqueada? */
+export function isSubscriptionError(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 402 && !!error.body?.code?.startsWith('subscription_');
+}
+
 let refreshing: Promise<string | null> | null = null;
 
 /**
@@ -153,7 +168,9 @@ export async function request<T>(path: string, options: RequestOptions = {}, ret
     // sessão e os guards levam ao login. Só se o token recusado ainda for o atual: requisições
     // antigas em voo não podem derrubar uma sessão que já foi renovada.
     if (response.status === 401 && token && session.getToken() === token) session.clear('expired');
-    throw new ApiError(response.status, errorBody, messagesFor(response.status, errorBody));
+    const error = new ApiError(response.status, errorBody, messagesFor(response.status, errorBody));
+    if (isSubscriptionError(error)) subscriptionListeners.forEach((listener) => listener());
+    throw error;
   }
 
   return data as T;

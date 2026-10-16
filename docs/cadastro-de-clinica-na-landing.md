@@ -105,6 +105,10 @@ Erros de regra de negócio e os `409` não têm `errors`: só `message` em texto
 | `409` "Já existe um usuário com o email …" | Email já usado em qualquer clínica. | Mostrar no campo de email, com link para o login ou para "esqueci minha senha". |
 | `429` | Mais de **10 cadastros por minuto** do mesmo IP. | "Muitas tentativas, aguarde um minuto." |
 
+## Planos e teste grátis
+
+Toda clínica nasce em **teste grátis** (14 dias, plano Essencial, sem cartão) e contrata depois, dentro do app (Configurações › Assinatura). A tabela de preços da landing vem de `GET /public/plans` (público, formato na seção 12.1 de `regras-de-negocio.md`); não escreva preços na página. O guia completo para o time da landing está em `../bem-te-vi-api/docs/landing/pagina-de-cadastro.md`.
+
 ## Comportamentos que valem a pena manter
 
 Eram assim no app e funcionavam bem:

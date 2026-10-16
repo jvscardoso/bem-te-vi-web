@@ -18,6 +18,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import Close from '@mui/icons-material/Close';
 import { tenantKeys, tenantsApi } from '@/api/tenants';
 import type { Tenant } from '@/api/types';
+import { useAuth } from '@/auth/AuthContext';
 import { ErrorMessages } from '@/components/ErrorMessages';
 import { SectionCard } from '@/components/SectionCard';
 import { useNotify } from '@/components/notifications/NotificationContext';
@@ -36,6 +37,8 @@ interface FormValues {
 }
 
 export function BrandingTab({ tenant }: { tenant: Tenant }) {
+  // Assinatura em só leitura: a API recusaria (402).
+  const { readOnly } = useAuth();
   const queryClient = useQueryClient();
   const notify = useNotify();
   const branding = tenant.branding;
@@ -113,7 +116,7 @@ export function BrandingTab({ tenant }: { tenant: Tenant }) {
 
         <ErrorMessages error={save.error} />
         <Box>
-          <Button type="submit" variant="contained" disabled={!isDirty} loading={save.isPending}>
+          <Button type="submit" variant="contained" disabled={!isDirty || readOnly} loading={save.isPending}>
             Salvar marca
           </Button>
         </Box>

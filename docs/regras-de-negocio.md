@@ -740,6 +740,21 @@ Só para usuários da clínica-plataforma (criados por script, nunca por signup)
 
 ---
 
+## 12.1 Assinatura da clínica (task 29 da API / 31 do front)
+
+A plataforma cobra a mensalidade pelo Asaas. Toda clínica tem uma assinatura (`null` só na clínica-plataforma).
+
+- **Planos:** `GET /public/plans` (público) → `{ trialDays, trialPlanId, annualDiscountPercent, data: [{ id, name, monthlyPriceCents, annualPriceCents, maxProfessionals, extraProfessionalCents, monthlyReminders, monthlyBotBookings, monthlyCampaignMessages }] }`, do menor para o maior. Preços nunca no front. Lembretes, bot e campanhas (WhatsApp) ainda não existem.
+- **Situação para todo usuário:** `subscription` em `GET /auth/me`: `{ planId, status, trialEndsAt, currentPeriodEnd, access, reason, changesAt }`.
+  - `status`: `trialing` (em teste, mesmo depois de contratar, até o primeiro pagamento), `active`, `past_due`.
+  - `access`: `full` | `read_only` | `blocked`; `reason`: `trial_ended` | `past_due` | `null`; `changesAt`: quando o acesso muda sozinho.
+  - Tempo (a API calcula): teste completo até `trialEndsAt` → só leitura por 30 dias → bloqueada. Atraso: completo por 7 dias → só leitura por 30 dias → bloqueada. Pagamento confirmado devolve o acesso na hora.
+- **Detalhes e contratação** (`tenant:manage`): `GET /tenants/:id/subscription` → `{ plan, status, cycle, trialEndsAt, currentPeriodEnd, pastDueSince, contracted, contractedAt, paymentUrl, billing, access, reason, changesAt }`. `POST /tenants/:id/subscription` com `{ planId, cycle: 'monthly' | 'yearly', paymentMethod: 'pix' | 'boleto' | 'credit_card' | 'any', billing: { name, document (CPF ou CNPJ), email } }` → `201` com `contracted: true` e `paymentUrl` (página do Asaas, abrir em nova aba; o cartão nunca passa pelo front). Contratar no teste não o encurta: a primeira cobrança vence no fim dele.
+  - Erros: `400` (validação, ex.: `billing.document` "CPF ou CNPJ inválido"; dado recusado pelo Asaas), `409` (já contratou; troca de plano não existe), `502` (Asaas fora do ar), `503` (contratação indisponível no ambiente, sem a chave do Asaas).
+- **`402`** em qualquer rota fora das isentas: `{ statusCode: 402, code: 'subscription_read_only' | 'subscription_blocked', message }`. Só leitura recusa escrita; bloqueada recusa tudo. **Não desloga.** Sempre funcionam: `/auth/*`, `GET`/`POST /tenants/:id/subscription`, `GET /tenants/:id/export`, `GET /tenants/:tenantId/patients/:id/export` e `/tenants/:id/closure`.
+- **Painel da plataforma:** `GET /platform/tenants` traz `subscription` em cada clínica: `{ planId, status, cycle, trialEndsAt, pastDueSince, currentPeriodEnd, contractedAt, access, reason, changesAt }` ou `null`.
+- **Dev:** a ativação só chega pelo webhook do Asaas, que não alcança a API local; simule com `POST /webhooks/asaas` (ver a task 31 do front). Na API em Docker, a chave do Asaas vai entre aspas simples no `.env` (o `$` dela seria interpretado), e o `JWT_SECRET` precisa ser um segredo gerado (não o `change-me`).
+
 ## 13. Mapa de telas sugerido para o MVP
 
 | Tela | Rotas principais | Permissão para exibir |
@@ -793,6 +808,7 @@ export interface Page<T> { data: T[]; meta: { total: number; page: number; pageS
 export interface ApiError {
   statusCode: number; error: string; message: string | string[]; removedPatientId?: UUID;
   errors?: { field: string; code: string; message: string }[]; // só nos 400 de validação
+  code?: string; // ex.: 'subscription_read_only' no 402
 }
 
 export type PermissionKey =

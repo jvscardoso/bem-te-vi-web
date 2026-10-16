@@ -1,8 +1,8 @@
-Atualizado em 15/10/2026.
+Atualizado em 16/10/2026.
 
 # Status do front (bem-te-vi-web)
 
-Retrato do que existe no código. Leia antes de começar uma tarefa. Regras de negócio e contrato da API: [`regras-de-negocio.md`](regras-de-negocio.md). Como o código é organizado: [`arquitetura.md`](arquitetura.md).
+Retrato do que existe no código. Leia antes de começar uma tarefa. Regras de negócio e contrato da API: [`regras-de-negocio.md`](regras-de-negocio.md). Como o código é organizado: [`arquitetura.md`](arquitetura.md). Ideias e direções para depois do MVP: [`roadmap/`](roadmap/README.md).
 
 **Saúde do projeto:** `npm run typecheck` e `npm run lint` passam sem erros. Não há testes automatizados (a verificação até aqui foi manual, no navegador, contra a API local).
 
@@ -37,7 +37,7 @@ Retrato do que existe no código. Leia antes de começar uma tarefa. Regras de n
 | Usuários | `/usuarios` | `users:manage` | Lista; criar por **convite** (padrão) ou com senha (com gerador); editar papel/status e, só se o papel atende (`appointments:attend`; pelo papel escolhido com `roles:manage`, senão por `attendsPatients`), a duração padrão; "Reenviar convite" para `invited`, "Redefinir senha" para os demais; regras de "acima de si" e último admin na UI. |
 | Papéis e permissões | `/papeis` | `roles:manage` | CRUD de papéis com permissões agrupadas por área; marcar escrita/`all` marca a leitura; bloqueia o que o ator não tem; `appointments:attend` ("Atende pacientes") no grupo Agenda; aviso para papel com `appointments:read` sem `all` nem `attend` (não tem agenda para ver). |
 | Auditoria | `/auditoria` | `audit:read` | Trilha da clínica (LGPD): filtros por usuário (só com `users:manage`, que lista os usuários), ação, paciente (busca) e período; tabela com data, usuário, ação e **nome do paciente** (link para a ficha; removido ou apagado aparece sem link), sem gerar `patient.view`; diálogo de detalhes (IP, navegador, campos alterados). Filtros na URL, exceto o paciente. |
-| Configurações | `/configuracoes` | `tenant:manage` | Abas Dados (nome; o subdomínio aparece bloqueado com o selo "Em breve", porque trocar o endereço da clínica fica para depois), Agenda (durações), Marca (nome fantasia, cores com pré-visualização, **upload de logo** ou URL externa), Domínio (registro TXT, verificar agora) , **Tela inicial** (blocos do Início: adicionar, remover, arrastar ou mover, largura 1/3, 1/2, 2/3 ou inteira, restaurar padrão, descartar; vale para toda a equipe; salva em `/configs`, mostrando quem alterou e quando; salvar igual ao padrão apaga o salvo) e **Encerrar conta** (exportar todos os dados com `patients:export`; pedir o encerramento com senha e confirmação; cancelar durante a carência). Salvar a marca re-tematiza o app na hora. |
+| Configurações | `/configuracoes` | `tenant:manage` | Aba **Assinatura** (situação; sem contrato: planos de `/public/plans`, mensal ou anual com a economia, forma de pagamento e dados de cobrança, abrindo a página de pagamento do Asaas; contratado: plano, cobrança, link de pagamento e "atualizar situação"). Abas Dados (nome; o subdomínio aparece bloqueado com o selo "Em breve", porque trocar o endereço da clínica fica para depois), Agenda (durações), Marca (nome fantasia, cores com pré-visualização, **upload de logo** ou URL externa), Domínio (registro TXT, verificar agora) , **Tela inicial** (blocos do Início: adicionar, remover, arrastar ou mover, largura 1/3, 1/2, 2/3 ou inteira, restaurar padrão, descartar; vale para toda a equipe; salva em `/configs`, mostrando quem alterou e quando; salvar igual ao padrão apaga o salvo) e **Encerrar conta** (exportar todos os dados com `patients:export`; pedir o encerramento com senha e confirmação; cancelar durante a carência). Salvar a marca re-tematiza o app na hora. |
 | Minha conta | `/minha-conta` | — | Dados do usuário, trocar senha (troca o token), duração padrão própria (só com `appointments:attend`). |
 | Não encontrado | `*` | — | 404 dentro do shell. |
 | Erro de tela | — | — | `RouteErrorPage`: "Algo deu errado" (no conteúdo, com o menu, ou na tela inteira fora do app); publicação nova com o app aberto recarrega sozinho uma vez e depois mostra "Nova versão disponível". |
@@ -69,9 +69,9 @@ As 11 tasks recebidas da API (01 a 11) foram concluídas e conferidas no código
 
 **Convenção (desde 10/10/2026):** mudança que a **API** precisa fazer vira task em `../bem-te-vi-api/docs/changes/` (índice `00-indice.md` lá); mudança que o **front** precisa fazer vira task em `docs/changes/` deste repositório. A numeração é uma só nos dois. As duas pastas ficam fora do git.
 
-**Tasks do front abertas** (`docs/changes/00-indice.md`): 20 (segurança do front; itens 2 e 5 feitos em 15/10/2026, exceto o CI) e 28. Feitas em 14/10/2026: 21 (sessão), 23 (quem atende), 26 (`/configs`) e 27 (links de email com subdomínio); em 15/10/2026: 22 (erros de validação com o campo), 24 (nome do paciente na auditoria) e 25 (encerramentos no painel da plataforma).
+**Tasks do front abertas** (`docs/changes/00-indice.md`): 20 (segurança do front; itens 2 e 5 feitos em 15/10/2026, exceto o CI) e 28 (em espera). Feita em 16/10/2026: 31 (assinatura da clínica). Feitas em 14/10/2026: 21 (sessão), 23 (quem atende), 26 (`/configs`) e 27 (links de email com subdomínio); em 15/10/2026: 22 (erros de validação com o campo), 24 (nome do paciente na auditoria) e 25 (encerramentos no painel da plataforma).
 
-**Pedidos do front à API:** 12 a 19 entregues pela API em 14/10/2026; o que faltava no front virou as tasks 21 a 27 (e a 12 só precisava trocar os textos da busca, feito em 14/10/2026). Aberta na API: 29 (assinatura das clínicas pelo Asaas, sem efeito no front por enquanto).
+**Pedidos do front à API:** 12 a 19 entregues pela API em 14/10/2026; o que faltava no front virou as tasks 21 a 27 (e a 12 só precisava trocar os textos da busca, feito em 14/10/2026). A 29 (assinatura das clínicas pelo Asaas) foi entregue em 15/10/2026 e virou a task 31 do front, feita em 16/10/2026.
 
 **Recebidas da API (concluídas):**
 
@@ -118,6 +118,8 @@ Resolvidos em 15/10/2026: tela de erro (com recarga automática depois de public
 
 ## Limitações e bugs conhecidos
 
+- **Assinatura:** o aviso de contrato feito durante o teste só aparece para quem tem `tenant:manage` (o `/auth/me` não diz se já contratou; os demais veem "Teste grátis até…"). Depois de pagar, a situação muda quando o `/auth/me` é relido (abrir o app, voltar à aba ou "Já paguei, atualizar situação"). A página de pagamento abre depois da resposta da API e pode ser barrada como pop-up; o botão "Abrir página de pagamento" fica na tela. Troca de plano ainda não existe (API).
+- **Só leitura:** somem as ações que dependem de `patients:write`, `appointments:write` e `billing:write` (o `can()` deixa de reconhecê-las), e as de administração são desabilitadas uma a uma (`readOnly`). Ação nova que não seguir esse padrão ainda recebe o `402`, com a mensagem da API.
 - **Troca de subdomínio indisponível:** Configurações › Dados só mostra o subdomínio. A API ainda aceita `subdomain` no `PATCH /tenants/:id`; quando a troca voltar, precisa levar a pessoa ao endereço novo (e, de preferência, a API redirecionar o antigo).
 - **Carência no painel da plataforma:** o botão de exclusão compara `deletionAvailableAt` com a hora em que a tela abriu; se a carência vencer com a tela aberta, ele só habilita ao recarregar a página.
 - **Erro no campo (`applyFieldErrors`)** só nos formulários de paciente, Configurações › Dados e usuário. Nos demais, as frases da API continuam na área de erros, que já diz o campo.

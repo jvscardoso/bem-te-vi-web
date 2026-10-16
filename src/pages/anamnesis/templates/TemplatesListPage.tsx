@@ -20,7 +20,7 @@ import AddOutlined from '@mui/icons-material/AddOutlined';
 import DeleteOutlineOutlined from '@mui/icons-material/DeleteOutlineOutlined';
 import { anamnesisApi, anamnesisKeys } from '@/api/anamnesis';
 import type { AnamnesisTemplate } from '@/api/types';
-import { useTenantId } from '@/auth/AuthContext';
+import { useAuth, useTenantId } from '@/auth/AuthContext';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessages } from '@/components/ErrorMessages';
@@ -50,8 +50,15 @@ export function TemplatesListPage() {
     },
   });
 
+  const { readOnly } = useAuth();
   const newButton = (
-    <Button component={RouterLink} to="/anamnese/formularios/novo" variant="contained" startIcon={<AddOutlined />}>
+    <Button
+      component={RouterLink}
+      to="/anamnese/formularios/novo"
+      variant="contained"
+      startIcon={<AddOutlined />}
+      disabled={readOnly}
+    >
       Novo formulário
     </Button>
   );
@@ -110,11 +117,13 @@ export function TemplatesListPage() {
                       {formatDateTime(template.updatedAt)}
                     </TableCell>
                     <TableCell align="right">
-                      <Tooltip title="Excluir">
-                        <IconButton aria-label={`Excluir ${template.name}`} onClick={() => setToDelete(template)}>
-                          <DeleteOutlineOutlined />
-                        </IconButton>
-                      </Tooltip>
+                      {!readOnly && (
+                        <Tooltip title="Excluir">
+                          <IconButton aria-label={`Excluir ${template.name}`} onClick={() => setToDelete(template)}>
+                            <DeleteOutlineOutlined />
+                          </IconButton>
+                        </Tooltip>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

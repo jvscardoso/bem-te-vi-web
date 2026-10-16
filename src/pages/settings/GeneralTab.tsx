@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Box, Button, Chip, InputAdornment, Stack, TextField } from '@mui/material';
 import { tenantKeys, tenantsApi, type TenantUpdate } from '@/api/tenants';
 import type { Tenant } from '@/api/types';
+import { useAuth } from '@/auth/AuthContext';
 import { ErrorMessages } from '@/components/ErrorMessages';
 import { SectionCard } from '@/components/SectionCard';
 import { useNotify } from '@/components/notifications/NotificationContext';
@@ -18,6 +19,8 @@ interface FormValues {
 }
 
 export function GeneralTab({ tenant }: { tenant: Tenant }) {
+  // Assinatura em só leitura: a API recusaria (402).
+  const { readOnly } = useAuth();
   const queryClient = useQueryClient();
   const notify = useNotify();
 
@@ -80,7 +83,7 @@ export function GeneralTab({ tenant }: { tenant: Tenant }) {
 
       <ErrorMessages error={areaError} />
       <Box>
-        <Button type="submit" variant="contained" disabled={!isDirty} loading={save.isPending}>
+        <Button type="submit" variant="contained" disabled={!isDirty || readOnly} loading={save.isPending}>
           Salvar
         </Button>
       </Box>

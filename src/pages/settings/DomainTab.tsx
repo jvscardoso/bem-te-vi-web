@@ -21,6 +21,7 @@ import ContentCopy from '@mui/icons-material/ContentCopy';
 import VerifiedOutlined from '@mui/icons-material/VerifiedOutlined';
 import { tenantKeys, tenantsApi } from '@/api/tenants';
 import type { DomainVerification, Tenant } from '@/api/types';
+import { useAuth } from '@/auth/AuthContext';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ErrorMessages } from '@/components/ErrorMessages';
 import { SectionCard } from '@/components/SectionCard';
@@ -42,6 +43,8 @@ export function DomainTab({ tenant }: { tenant: Tenant }) {
 function DomainForm({ tenant }: { tenant: Tenant }) {
   const queryClient = useQueryClient();
   const notify = useNotify();
+  // Assinatura em só leitura: a API recusaria (402).
+  const { readOnly } = useAuth();
   const [confirmRemove, setConfirmRemove] = useState(false);
 
   const {
@@ -89,11 +92,11 @@ function DomainForm({ tenant }: { tenant: Tenant }) {
         )}
         {!confirmRemove && <ErrorMessages error={save.error} />}
         <Stack direction="row" spacing={1}>
-          <Button type="submit" variant="contained" disabled={!isDirty} loading={save.isPending && !confirmRemove}>
+          <Button type="submit" variant="contained" disabled={!isDirty || readOnly} loading={save.isPending && !confirmRemove}>
             Salvar domínio
           </Button>
           {tenant.customDomain && (
-            <Button color="error" onClick={() => setConfirmRemove(true)} disabled={save.isPending}>
+            <Button color="error" onClick={() => setConfirmRemove(true)} disabled={save.isPending || readOnly}>
               Remover domínio
             </Button>
           )}
@@ -121,6 +124,8 @@ function DomainForm({ tenant }: { tenant: Tenant }) {
 function DomainVerificationCard({ tenant }: { tenant: Tenant }) {
   const queryClient = useQueryClient();
   const notify = useNotify();
+  // Assinatura em só leitura: a API recusaria (402).
+  const { readOnly } = useAuth();
 
   const query = useQuery({
     queryKey: tenantKeys.domain(tenant.id),
@@ -169,7 +174,7 @@ function DomainVerificationCard({ tenant }: { tenant: Tenant }) {
           </Typography>
           <DnsRecord record={domain.record} />
           <Box>
-            <Button variant="contained" onClick={() => verify.mutate()} loading={verify.isPending}>
+            <Button variant="contained" onClick={() => verify.mutate()} loading={verify.isPending} disabled={readOnly}>
               Verificar agora
             </Button>
           </Box>

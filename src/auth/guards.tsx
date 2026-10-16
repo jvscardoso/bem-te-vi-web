@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router';
+import { Link as RouterLink, Navigate, Outlet, useLocation } from 'react-router';
 import { Button } from '@mui/material';
 import { FullScreenLoader } from '@/components/FullScreenLoader';
 import { StatusScreen } from '@/components/StatusScreen';
 import { getErrorMessages } from '@/lib/errors';
+import { SubscriptionBlockedScreen } from '@/pages/settings/subscription/SubscriptionBlockedScreen';
 import { useAuth } from './AuthContext';
 import { PendingLegalScreen } from './PendingLegalScreen';
 import { isPlatformUser, type PermissionRequirement } from './permissions';
@@ -34,6 +35,8 @@ export function RequireAuth() {
   }
   // Termos/Política pendentes: nada do app (clínica ou plataforma) aparece até o aceite.
   if (user?.pendingLegalDocuments?.length) return <PendingLegalScreen pending={user.pendingLegalDocuments} />;
+  // Assinatura bloqueada: a API recusa até a leitura (402), então nada do app abre.
+  if (user?.subscription?.access === 'blocked') return <SubscriptionBlockedScreen />;
   return <Outlet />;
 }
 
@@ -46,7 +49,23 @@ export function RedirectIfAuthenticated() {
 
 /** Mostra aviso de acesso negado quando faltam permissões. */
 export function RequirePermission({ permission, children }: { permission: PermissionRequirement; children?: ReactNode }) {
-  const { can } = useAuth();
+  const { can, hasRole, readOnly } = useAuth();
+  // Tela que só serve para alterar dados (novo paciente, editar…) com a clínica em só leitura.
+  if (!can(permission) && readOnly && hasRole(permission)) {
+    return (
+      <StatusScreen
+        title="Modo só leitura"
+        description="Esta tela altera dados e fica indisponível enquanto a assinatura da clínica não for regularizada."
+        action={
+          can('tenant:manage') ? (
+            <Button variant="contained" component={RouterLink} to="/configuracoes?aba=assinatura">
+              Ver assinatura
+            </Button>
+          ) : undefined
+        }
+      />
+    );
+  }
   if (!can(permission)) {
     return (
       <StatusScreen

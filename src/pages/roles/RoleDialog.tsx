@@ -44,7 +44,9 @@ interface RoleDialogProps {
 
 export function RoleDialog({ role, readOnly, onClose }: RoleDialogProps) {
   const tenantId = useTenantId();
-  const { user: me, refresh } = useAuth();
+  const { user: me, refresh, readOnly: subscriptionReadOnly } = useAuth();
+  // Sem poder salvar: papel acima de quem edita, ou clínica em só leitura (assinatura).
+  const locked = readOnly || subscriptionReadOnly;
   const queryClient = useQueryClient();
   const notify = useNotify();
   const theme = useTheme();
@@ -93,7 +95,7 @@ export function RoleDialog({ role, readOnly, onClose }: RoleDialogProps) {
   return (
     <Dialog open onClose={save.isPending ? undefined : onClose} fullWidth maxWidth="md" fullScreen={fullScreen}>
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        {role ? (readOnly ? 'Papel' : 'Editar papel') : 'Novo papel'}
+        {role ? (locked ? 'Papel' : 'Editar papel') : 'Novo papel'}
         {isAdmin && <Chip size="small" color="primary" label="Administrador" />}
       </DialogTitle>
       <DialogContent dividers>
@@ -102,6 +104,9 @@ export function RoleDialog({ role, readOnly, onClose }: RoleDialogProps) {
             <Alert severity="info">
               Este papel tem permissões que você não tem. Só um administrador com essas permissões pode alterá-lo.
             </Alert>
+          )}
+          {subscriptionReadOnly && (
+            <Alert severity="warning">A clínica está em modo só leitura: as alterações voltam com a assinatura regularizada.</Alert>
           )}
 
           <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 2fr' } }}>
@@ -118,7 +123,7 @@ export function RoleDialog({ role, readOnly, onClose }: RoleDialogProps) {
                   autoFocus={!role}
                   {...field}
                   inputRef={field.ref}
-                  disabled={readOnly}
+                  disabled={locked}
                   error={!!fieldState.error}
                   helperText={fieldState.error?.message}
                 />
@@ -133,7 +138,7 @@ export function RoleDialog({ role, readOnly, onClose }: RoleDialogProps) {
                   placeholder="Ex.: Agenda e cadastro de pacientes"
                   {...field}
                   inputRef={field.ref}
-                  disabled={readOnly}
+                  disabled={locked}
                 />
               )}
             />
@@ -164,7 +169,7 @@ export function RoleDialog({ role, readOnly, onClose }: RoleDialogProps) {
                             const notOwned = !actorPermissions.includes(permission.key);
                             const option = (
                               <FormControlLabel
-                                disabled={readOnly || notOwned}
+                                disabled={locked || notOwned}
                                 control={
                                   <Checkbox
                                     size="small"
@@ -185,7 +190,7 @@ export function RoleDialog({ role, readOnly, onClose }: RoleDialogProps) {
                                 sx={{ alignItems: 'flex-start', my: 0.25, '& .MuiCheckbox-root': { pt: 0.5 } }}
                               />
                             );
-                            return notOwned && !readOnly ? (
+                            return notOwned && !locked ? (
                               <Tooltip key={permission.key} title="Você não tem esta permissão, então não pode concedê-la" placement="top-start">
                                 <span>{option}</span>
                               </Tooltip>
@@ -215,7 +220,7 @@ export function RoleDialog({ role, readOnly, onClose }: RoleDialogProps) {
             </Alert>
           )}
 
-          {losingOwnAccess && !readOnly && (
+          {losingOwnAccess && !locked && (
             <Alert severity="warning">
               Este é o seu papel: ao remover permissões, você perde esses acessos assim que salvar.
             </Alert>
@@ -231,9 +236,9 @@ export function RoleDialog({ role, readOnly, onClose }: RoleDialogProps) {
 
       <DialogActions sx={{ px: 3, py: 2 }}>
         <Button onClick={onClose} disabled={save.isPending}>
-          {readOnly ? 'Fechar' : 'Cancelar'}
+          {locked ? 'Fechar' : 'Cancelar'}
         </Button>
-        {!readOnly && (
+        {!locked && (
           <Button
             type="submit"
             form="role-form"

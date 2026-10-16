@@ -4,6 +4,7 @@ import { Alert, Avatar, Box, Button, Collapse, Link, Stack, TextField, Typograph
 import UploadOutlined from '@mui/icons-material/UploadOutlined';
 import { tenantKeys, tenantsApi } from '@/api/tenants';
 import type { Tenant, TenantBranding } from '@/api/types';
+import { useAuth } from '@/auth/AuthContext';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ErrorMessages } from '@/components/ErrorMessages';
 import { SectionCard } from '@/components/SectionCard';
@@ -25,6 +26,8 @@ const isHttpsUrl = (value: string) => {
 export function LogoSection({ tenant }: { tenant: Tenant }) {
   const queryClient = useQueryClient();
   const notify = useNotify();
+  // Assinatura em só leitura: a API recusaria (402).
+  const { readOnly } = useAuth();
   const currentLogo = tenant.branding?.logoUrl ?? null;
   const name = tenant.branding?.tradeName || tenant.name;
 
@@ -87,7 +90,7 @@ export function LogoSection({ tenant }: { tenant: Tenant }) {
     setPreview(URL.createObjectURL(selected));
   };
 
-  const busy = upload.isPending || remove.isPending || saveUrl.isPending;
+  const busy = upload.isPending || remove.isPending || saveUrl.isPending || readOnly;
   const urlValid = isHttpsUrl(url.trim());
 
   return (
@@ -109,7 +112,7 @@ export function LogoSection({ tenant }: { tenant: Tenant }) {
                 <strong>{file.name}</strong> · {(file.size / 1024).toFixed(0)} KB · pré-visualização ao lado
               </Typography>
               <Stack direction="row" spacing={1}>
-                <Button variant="contained" onClick={() => upload.mutate(file)} loading={upload.isPending}>
+                <Button variant="contained" onClick={() => upload.mutate(file)} loading={upload.isPending} disabled={readOnly}>
                   Enviar logo
                 </Button>
                 <Button

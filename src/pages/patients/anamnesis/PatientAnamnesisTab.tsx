@@ -78,7 +78,7 @@ export function PatientAnamnesisTab({ patient }: { patient: Patient }) {
   }
 
   return (
-    <Stack spacing={2} sx={{ maxWidth: 960 }}>
+    <Stack spacing={2}>
       <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
         <Typography color="text.secondary">
           {records.data.length} {records.data.length === 1 ? 'ficha registrada' : 'fichas registradas'}

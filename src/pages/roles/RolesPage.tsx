@@ -38,7 +38,7 @@ type DialogState = { kind: 'create' } | { kind: 'edit'; role: Role } | { kind: '
 /** /papeis — exige roles:manage. */
 export function RolesPage() {
   const tenantId = useTenantId();
-  const { user: me } = useAuth();
+  const { user: me, readOnly } = useAuth();
   const queryClient = useQueryClient();
   const notify = useNotify();
   const [dialog, setDialog] = useState<DialogState>(null);
@@ -61,7 +61,12 @@ export function RolesPage() {
         title="Papéis e permissões"
         subtitle="Cada usuário tem um papel; o papel define o que ele pode ver e fazer."
         actions={
-          <Button variant="contained" startIcon={<AddOutlined />} onClick={() => setDialog({ kind: 'create' })}>
+          <Button
+            variant="contained"
+            startIcon={<AddOutlined />}
+            onClick={() => setDialog({ kind: 'create' })}
+            disabled={readOnly}
+          >
             Novo papel
           </Button>
         }
@@ -115,7 +120,7 @@ export function RolesPage() {
                       </TableCell>
                       <TableCell align="right">{role.permissions.length}</TableCell>
                       <TableCell align="right" onClick={(event) => event.stopPropagation()}>
-                        {!above && (
+                        {!above && !readOnly && (
                           <Tooltip title="Excluir">
                             <IconButton aria-label={`Excluir ${role.name}`} onClick={() => setDialog({ kind: 'delete', role })}>
                               <DeleteOutlineOutlined />

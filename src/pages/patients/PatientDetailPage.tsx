@@ -130,7 +130,7 @@ function PatientData({ patient }: { patient: Patient }) {
   const lines = addressLines(patient.address);
 
   return (
-    <Stack spacing={3} sx={{ maxWidth: 960 }}>
+    <Stack spacing={3}>
       <SectionCard title="Dados pessoais">
         <Box
           sx={{

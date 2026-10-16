@@ -7,6 +7,24 @@ export interface Page<T> { data: T[]; meta: { total: number; page: number; pageS
 export interface ApiError {
   statusCode: number; error: string; message: string | string[]; removedPatientId?: UUID;
   errors?: { field: string; code: string; message: string }[];
+  /** Motivo de máquina de alguns erros (ex.: `subscription_read_only` no 402). */
+  code?: string;
+}
+
+/** Situação da assinatura da clínica, calculada pela API a cada requisição (task 31). */
+export type SubscriptionStatus = 'trialing' | 'active' | 'past_due';
+export type SubscriptionAccess = 'full' | 'read_only' | 'blocked';
+export interface SubscriptionState {
+  planId: string;
+  /** `trialing` vale até o primeiro pagamento, mesmo depois de contratar. */
+  status: SubscriptionStatus;
+  trialEndsAt: ISODateTime | null;
+  currentPeriodEnd: ISODateTime | null;
+  access: SubscriptionAccess;
+  /** Por que o acesso não está completo (ou, em atraso dentro da carência, por que avisar). */
+  reason: 'trial_ended' | 'past_due' | null;
+  /** Quando o acesso muda sozinho para o próximo estado; null = não muda. */
+  changesAt: ISODateTime | null;
 }
 
 export type PermissionKey =
@@ -30,6 +48,8 @@ export interface Me {
   name: string; email: string; role: { id: UUID; name: string };
   /** Documentos cuja versão vigente o usuário ainda não aceitou: o front bloqueia o uso até o aceite. */
   pendingLegalDocuments: LegalDocument[];
+  /** null só na clínica-plataforma. */
+  subscription: SubscriptionState | null;
 }
 export interface ChangePasswordResponse { accessToken: string }
 
@@ -121,4 +141,9 @@ export interface PlatformTenant {
   /** A partir de quando a exclusão definitiva é aceita (pedido + carência); null sem pedido. */
   deletionAvailableAt: ISODateTime | null;
   _count: { users: number; patients: number };
+  subscription: (Pick<SubscriptionState, 'planId' | 'status' | 'trialEndsAt' | 'currentPeriodEnd' | 'access' | 'reason' | 'changesAt'> & {
+    cycle: BillingCycle; pastDueSince: ISODateTime | null; contractedAt: ISODateTime | null;
+  }) | null;
 }
+
+export type BillingCycle = 'monthly' | 'yearly';
