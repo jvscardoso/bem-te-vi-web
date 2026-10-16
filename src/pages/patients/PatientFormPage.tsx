@@ -9,12 +9,14 @@ import type { Patient } from '@/api/types';
 import { useTenantId } from '@/auth/AuthContext';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ErrorMessages } from '@/components/ErrorMessages';
+import { HOME_CRUMB } from '@/components/breadcrumbs';
 import { PageHeader } from '@/components/PageHeader';
 import { SectionCard } from '@/components/SectionCard';
 import { useNotify } from '@/components/notifications/NotificationContext';
 import { applyFieldErrors, isApiError } from '@/lib/errors';
 import { muiField } from '@/lib/form';
 import { maskCep, maskCpf, maskPhone } from '@/lib/masks';
+import { useGoBack } from '@/lib/useGoBack';
 import { PatientNotFound } from './PatientNotFound';
 import { ADDRESS_KEYS, patientSchema, toFormValues, toPatientInput, type PatientFormValues } from './patientForm';
 
@@ -50,6 +52,7 @@ const span = (md: number, sm = 1) => ({ gridColumn: { xs: 'span 1', sm: `span ${
 function PatientForm({ patient }: { patient?: Patient }) {
   const tenantId = useTenantId();
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const queryClient = useQueryClient();
   const notify = useNotify();
   const [removedPatientId, setRemovedPatientId] = useState<string | null>(null);
@@ -73,7 +76,9 @@ function PatientForm({ patient }: { patient?: Patient }) {
       queryClient.setQueryData(patientsKeys.detail(tenantId, saved.id), saved);
       void queryClient.invalidateQueries({ queryKey: patientsKeys.all(tenantId) });
       notify(patient ? 'Paciente atualizado.' : 'Paciente cadastrado.');
-      navigate(`/pacientes/${saved.id}`, { replace: true });
+      // Edição: volta à ficha de onde veio. Cadastro novo: vai para a ficha recém-criada.
+      if (patient) goBack(`/pacientes/${saved.id}`);
+      else navigate(`/pacientes/${saved.id}`, { replace: true });
     },
     onMutate: () => setAreaError(null),
     onError: (error) => {
@@ -100,7 +105,15 @@ function PatientForm({ patient }: { patient?: Patient }) {
 
   return (
     <Box>
-      <PageHeader title={patient ? 'Editar paciente' : 'Novo paciente'} subtitle={patient?.fullName} />
+      <PageHeader
+        breadcrumbs={[
+          HOME_CRUMB,
+          { label: 'Pacientes', to: '/pacientes' },
+          ...(patient ? [{ label: patient.fullName, to: `/pacientes/${patient.id}` }] : []),
+        ]}
+        backTo={cancelPath}
+        title={patient ? 'Editar paciente' : 'Novo paciente'}
+      />
 
       <Stack spacing={3} component="form" onSubmit={handleSubmit((values) => save.mutate(values))} noValidate>
         <SectionCard title="Dados pessoais">

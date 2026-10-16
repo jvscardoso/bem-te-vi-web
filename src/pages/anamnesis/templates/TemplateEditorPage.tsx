@@ -12,7 +12,7 @@ import {
 } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link as RouterLink, useNavigate, useParams } from 'react-router';
+import { Link as RouterLink, useParams } from 'react-router';
 import {
   Alert,
   Box,
@@ -38,12 +38,14 @@ import { ApiError } from '@/api/client';
 import type { AnamnesisTemplate } from '@/api/types';
 import { useAuth, useTenantId } from '@/auth/AuthContext';
 import { ErrorMessages } from '@/components/ErrorMessages';
+import { HOME_CRUMB } from '@/components/breadcrumbs';
 import { PageHeader } from '@/components/PageHeader';
 import { SectionCard } from '@/components/SectionCard';
 import { StatusScreen } from '@/components/StatusScreen';
 import { useNotify } from '@/components/notifications/NotificationContext';
 import { isApiError } from '@/lib/errors';
 import { muiField } from '@/lib/form';
+import { useGoBack } from '@/lib/useGoBack';
 import { TemplatePreviewDialog } from './TemplatePreviewDialog';
 import {
   humanizeTemplateErrors,
@@ -90,7 +92,7 @@ function TemplateEditor({ template }: { template?: AnamnesisTemplate }) {
   // Assinatura em só leitura: a API recusaria (402).
   const { readOnly } = useAuth();
   const tenantId = useTenantId();
-  const navigate = useNavigate();
+  const goBack = useGoBack();
   const queryClient = useQueryClient();
   const notify = useNotify();
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -118,7 +120,7 @@ function TemplateEditor({ template }: { template?: AnamnesisTemplate }) {
       queryClient.setQueryData(anamnesisKeys.template(tenantId, saved.id), saved);
       void queryClient.invalidateQueries({ queryKey: anamnesisKeys.templates(tenantId) });
       notify(template ? 'Formulário atualizado.' : 'Formulário criado.');
-      navigate('/anamnese/formularios');
+      goBack('/anamnese/formularios');
     },
   });
 
@@ -128,6 +130,8 @@ function TemplateEditor({ template }: { template?: AnamnesisTemplate }) {
   return (
     <Box>
       <PageHeader
+        breadcrumbs={[HOME_CRUMB, { label: 'Formulários de anamnese', to: '/anamnese/formularios' }]}
+        backTo="/anamnese/formularios"
         title={template ? 'Editar formulário' : 'Novo formulário'}
         subtitle={template?.name}
         actions={

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link as RouterLink, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import {
   Box,
   Button,
@@ -14,12 +14,12 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material';
-import ArrowBack from '@mui/icons-material/ArrowBack';
 import { patientsApi, patientsKeys } from '@/api/patients';
 import { useAuth, useTenantId } from '@/auth/AuthContext';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessages } from '@/components/ErrorMessages';
 import { ListPagination } from '@/components/ListPagination';
+import { HOME_CRUMB } from '@/components/breadcrumbs';
 import { PageHeader } from '@/components/PageHeader';
 import { SearchField } from '@/components/SearchField';
 import { useNotify } from '@/components/notifications/NotificationContext';
@@ -59,13 +59,10 @@ export function RemovedPatientsPage() {
   return (
     <>
       <PageHeader
+        breadcrumbs={[HOME_CRUMB, { label: 'Pacientes', to: '/pacientes' }]}
+        backTo="/pacientes"
         title="Pacientes removidos"
         subtitle="Pacientes removidos mantêm dados, anamneses e histórico, e podem ser restaurados."
-        actions={
-          <Button component={RouterLink} to="/pacientes" startIcon={<ArrowBack />}>
-            Pacientes
-          </Button>
-        }
       />
 
       <Paper variant="outlined">

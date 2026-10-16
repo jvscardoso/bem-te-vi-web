@@ -33,6 +33,7 @@ import { useAuth, useTenantId } from '@/auth/AuthContext';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessages } from '@/components/ErrorMessages';
 import { ListPagination } from '@/components/ListPagination';
+import { HOME_CRUMB } from '@/components/breadcrumbs';
 import { PageHeader } from '@/components/PageHeader';
 import { PatientPicker, type PatientOption } from '@/components/PatientPicker';
 import { TableSkeletonRows } from '@/components/TableSkeletonRows';
@@ -117,6 +118,7 @@ export function AuditPage() {
   return (
     <>
       <PageHeader
+        breadcrumbs={[HOME_CRUMB]}
         title="Auditoria"
         subtitle="Quem acessou ou alterou dados de pacientes. Os registros são permanentes e não podem ser alterados."
       />

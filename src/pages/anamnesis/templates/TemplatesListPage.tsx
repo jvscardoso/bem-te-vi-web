@@ -24,6 +24,7 @@ import { useAuth, useTenantId } from '@/auth/AuthContext';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessages } from '@/components/ErrorMessages';
+import { HOME_CRUMB } from '@/components/breadcrumbs';
 import { PageHeader } from '@/components/PageHeader';
 import { useNotify } from '@/components/notifications/NotificationContext';
 import { TableSkeletonRows } from '@/components/TableSkeletonRows';
@@ -66,6 +67,7 @@ export function TemplatesListPage() {
   return (
     <>
       <PageHeader
+        breadcrumbs={[HOME_CRUMB]}
         title="Formulários de anamnese"
         subtitle="Modelos de ficha que a equipe preenche nos pacientes."
         actions={newButton}

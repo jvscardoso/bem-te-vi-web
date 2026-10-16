@@ -1,5 +1,6 @@
 import { Box, Stack, Typography } from '@mui/material';
 import { useAuth } from '@/auth/AuthContext';
+import { HOME_CRUMB } from '@/components/breadcrumbs';
 import { PageHeader } from '@/components/PageHeader';
 import { SectionCard } from '@/components/SectionCard';
 import { AppointmentSettingsForm } from './AppointmentSettingsForm';
@@ -11,7 +12,7 @@ export function MyAccountPage() {
 
   return (
     <Box>
-      <PageHeader title="Minha conta" />
+      <PageHeader breadcrumbs={[HOME_CRUMB]} title="Minha conta" />
       <Stack spacing={3}>
         <SectionCard title="Perfil" description="Para alterar nome ou email, fale com o administrador da clínica.">
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 2, sm: 4 }}>

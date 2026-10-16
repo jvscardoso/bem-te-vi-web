@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link as RouterLink, useNavigate, useParams, useSearchParams } from 'react-router';
+import { Link as RouterLink, useParams, useSearchParams } from 'react-router';
 import { Alert, Box, Button, MenuItem, Skeleton, Stack, TextField } from '@mui/material';
 import { anamnesisApi, anamnesisKeys } from '@/api/anamnesis';
 import { ApiError } from '@/api/client';
@@ -10,10 +10,12 @@ import type { AnamnesisTemplate, Patient } from '@/api/types';
 import { useAuth, useTenantId } from '@/auth/AuthContext';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessages } from '@/components/ErrorMessages';
+import { HOME_CRUMB } from '@/components/breadcrumbs';
 import { PageHeader } from '@/components/PageHeader';
 import { SectionCard } from '@/components/SectionCard';
 import { useNotify } from '@/components/notifications/NotificationContext';
 import { isApiError } from '@/lib/errors';
+import { useGoBack } from '@/lib/useGoBack';
 import { AnamnesisFieldInput } from '@/pages/anamnesis/AnamnesisFieldInput';
 import { emptyAnswers, splitAnswerErrors, toApiAnswers, type FormAnswers } from '@/pages/anamnesis/answers';
 import { PatientNotFound } from '../PatientNotFound';
@@ -44,7 +46,15 @@ export function FillAnamnesisPage() {
   if (templates.data.length === 0) {
     return (
       <>
-        <PageHeader title="Preencher anamnese" subtitle={patient.data.fullName} />
+        <PageHeader
+          breadcrumbs={[
+            HOME_CRUMB,
+            { label: 'Pacientes', to: '/pacientes' },
+            { label: patient.data.fullName, to: `/pacientes/${id}` },
+          ]}
+          backTo={backPath}
+          title="Preencher anamnese"
+        />
         <EmptyState
           title="Nenhum formulário de anamnese cadastrado"
           description={
@@ -71,7 +81,15 @@ export function FillAnamnesisPage() {
 
   return (
     <Box>
-      <PageHeader title="Preencher anamnese" subtitle={patient.data.fullName} />
+      <PageHeader
+        breadcrumbs={[
+          HOME_CRUMB,
+          { label: 'Pacientes', to: '/pacientes' },
+          { label: patient.data.fullName, to: `/pacientes/${id}` },
+        ]}
+        backTo={backPath}
+        title="Preencher anamnese"
+      />
       <Stack spacing={3}>
         {templates.data.length > 1 && (
           <TextField
@@ -112,7 +130,7 @@ interface AnamnesisFormProps {
 function AnamnesisForm({ patient, template, backPath }: AnamnesisFormProps) {
   const tenantId = useTenantId();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
+  const goBack = useGoBack();
   const notify = useNotify();
   const [generalErrors, setGeneralErrors] = useState<string[]>([]);
 
@@ -128,7 +146,7 @@ function AnamnesisForm({ patient, template, backPath }: AnamnesisFormProps) {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: anamnesisKeys.records(tenantId, patient.id) });
       notify('Anamnese registrada.');
-      navigate(backPath, { replace: true });
+      goBack(backPath);
     },
     onError: (error) => {
       if (!(error instanceof ApiError) || error.status !== 400) return;

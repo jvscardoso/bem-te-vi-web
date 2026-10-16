@@ -11,6 +11,7 @@ import { useAuth, useTenantId } from '@/auth/AuthContext';
 import type { PermissionRequirement } from '@/auth/permissions';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ErrorMessages } from '@/components/ErrorMessages';
+import { HOME_CRUMB } from '@/components/breadcrumbs';
 import { PageHeader } from '@/components/PageHeader';
 import { SectionCard } from '@/components/SectionCard';
 import { useNotify } from '@/components/notifications/NotificationContext';
@@ -68,6 +69,8 @@ export function PatientDetailPage() {
   return (
     <>
       <PageHeader
+        breadcrumbs={[HOME_CRUMB, { label: 'Pacientes', to: '/pacientes' }]}
+        backTo="/pacientes"
         title={patient.fullName}
         subtitle={subtitle || undefined}
         actions={

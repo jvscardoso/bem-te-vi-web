@@ -26,6 +26,7 @@ import { isRoleAbove } from '@/auth/privileges';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessages } from '@/components/ErrorMessages';
 import { ListPagination } from '@/components/ListPagination';
+import { HOME_CRUMB } from '@/components/breadcrumbs';
 import { PageHeader } from '@/components/PageHeader';
 import { TableSkeletonRows } from '@/components/TableSkeletonRows';
 import { formatDateTime } from '@/lib/format';
@@ -69,6 +70,7 @@ export function UsersPage() {
   return (
     <>
       <PageHeader
+        breadcrumbs={[HOME_CRUMB]}
         title="Usuários"
         subtitle="Quem acessa o sistema da clínica. Para tirar o acesso de alguém, desative o usuário."
         actions={

@@ -4,6 +4,7 @@ import { Box, Skeleton, Tab, Tabs } from '@mui/material';
 import { tenantKeys, tenantsApi } from '@/api/tenants';
 import { useTenantId } from '@/auth/AuthContext';
 import { ErrorMessages } from '@/components/ErrorMessages';
+import { HOME_CRUMB } from '@/components/breadcrumbs';
 import { PageHeader } from '@/components/PageHeader';
 import { BrandingTab } from './BrandingTab';
 import { DomainTab } from './DomainTab';
@@ -36,7 +37,7 @@ export function SettingsPage() {
 
   return (
     <Box>
-      <PageHeader title="Configurações da clínica" />
+      <PageHeader breadcrumbs={[HOME_CRUMB]} title="Configurações da clínica" />
       <Tabs
         value={tab}
         onChange={(_, value: TabValue) => setParams(value === 'dados' ? {} : { aba: value }, { replace: true })}

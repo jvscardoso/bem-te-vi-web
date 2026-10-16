@@ -18,6 +18,7 @@ import { useAuth, useTenantId } from '@/auth/AuthContext';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessages } from '@/components/ErrorMessages';
 import { ListPagination } from '@/components/ListPagination';
+import { HOME_CRUMB } from '@/components/breadcrumbs';
 import { PageHeader } from '@/components/PageHeader';
 import { PatientPicker, type PatientOption } from '@/components/PatientPicker';
 import { PAGE_SIZE_OPTIONS } from '@/lib/useListSearchParams';
@@ -85,6 +86,7 @@ export function BillingPage() {
   return (
     <>
       <PageHeader
+        breadcrumbs={[HOME_CRUMB]}
         title="Financeiro"
         actions={
           can('billing:write') && (

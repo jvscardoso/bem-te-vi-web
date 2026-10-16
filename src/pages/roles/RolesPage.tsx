@@ -27,6 +27,7 @@ import { isAdminRole, isRoleAbove } from '@/auth/privileges';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorMessages } from '@/components/ErrorMessages';
+import { HOME_CRUMB } from '@/components/breadcrumbs';
 import { PageHeader } from '@/components/PageHeader';
 import { useNotify } from '@/components/notifications/NotificationContext';
 import { TableSkeletonRows } from '@/components/TableSkeletonRows';
@@ -58,6 +59,7 @@ export function RolesPage() {
   return (
     <>
       <PageHeader
+        breadcrumbs={[HOME_CRUMB]}
         title="Papéis e permissões"
         subtitle="Cada usuário tem um papel; o papel define o que ele pode ver e fazer."
         actions={

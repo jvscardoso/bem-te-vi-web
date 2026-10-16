@@ -17,13 +17,13 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import ArrowBack from '@mui/icons-material/ArrowBack';
 import EditOutlined from '@mui/icons-material/EditOutlined';
 import PaymentsOutlined from '@mui/icons-material/PaymentsOutlined';
 import { billingApi, billingKeys } from '@/api/billing';
 import { useAuth, useTenantId } from '@/auth/AuthContext';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ErrorMessages } from '@/components/ErrorMessages';
+import { HOME_CRUMB } from '@/components/breadcrumbs';
 import { PageHeader } from '@/components/PageHeader';
 import { SectionCard } from '@/components/SectionCard';
 import { StatusScreen } from '@/components/StatusScreen';
@@ -80,10 +80,9 @@ export function ChargeDetailPage() {
 
   return (
     <Box>
-      <Button component={RouterLink} to="/financeiro" startIcon={<ArrowBack />} size="small" sx={{ mb: 1 }}>
-        Financeiro
-      </Button>
       <PageHeader
+        breadcrumbs={[HOME_CRUMB, { label: 'Financeiro', to: '/financeiro' }]}
+        backTo="/financeiro"
         title={charge.description}
         subtitle={
           <Stack direction="row" spacing={1} component="span" sx={{ alignItems: 'center' }}>
