@@ -126,7 +126,7 @@ function TemplateEditor({ template }: { template?: AnamnesisTemplate }) {
     save.error instanceof ApiError ? humanizeTemplateErrors(save.error.messages) : save.error;
 
   return (
-    <Box sx={{ maxWidth: 880 }}>
+    <Box>
       <PageHeader
         title={template ? 'Editar formulário' : 'Novo formulário'}
         subtitle={template?.name}

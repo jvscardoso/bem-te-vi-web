@@ -99,7 +99,7 @@ function PatientForm({ patient }: { patient?: Patient }) {
   const showSaveError = !!areaError && !removedPatientId;
 
   return (
-    <Box sx={{ maxWidth: 960 }}>
+    <Box>
       <PageHeader title={patient ? 'Editar paciente' : 'Novo paciente'} subtitle={patient?.fullName} />
 
       <Stack spacing={3} component="form" onSubmit={handleSubmit((values) => save.mutate(values))} noValidate>

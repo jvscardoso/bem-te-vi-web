@@ -10,7 +10,7 @@ export function MyAccountPage() {
   if (!user) return null;
 
   return (
-    <Box sx={{ maxWidth: 720 }}>
+    <Box>
       <PageHeader title="Minha conta" />
       <Stack spacing={3}>
         <SectionCard title="Perfil" description="Para alterar nome ou email, fale com o administrador da clínica.">

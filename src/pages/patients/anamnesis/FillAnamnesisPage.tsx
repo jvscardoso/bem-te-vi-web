@@ -70,7 +70,7 @@ export function FillAnamnesisPage() {
     templates.data.find((item) => item.id === requested) ?? (templates.data.length === 1 ? templates.data[0] : undefined);
 
   return (
-    <Box sx={{ maxWidth: 760 }}>
+    <Box>
       <PageHeader title="Preencher anamnese" subtitle={patient.data.fullName} />
       <Stack spacing={3}>
         {templates.data.length > 1 && (

@@ -1,4 +1,4 @@
-import { createTheme, getContrastRatio, lighten } from '@mui/material/styles';
+import { createTheme, darken, getContrastRatio, lighten } from '@mui/material/styles';
 import { ptBR } from '@mui/material/locale';
 import type { ColorMode } from './colorMode';
 
@@ -23,9 +23,12 @@ const PURPLE = {
 declare module '@mui/material/styles' {
   interface Palette {
     purple: Palette['primary'];
+    /** Cor primária da clínica como foi cadastrada (no escuro, `primary.main` é uma versão clareada). */
+    brand: string;
   }
   interface PaletteOptions {
     purple?: PaletteOptions['primary'];
+    brand?: string;
   }
 }
 declare module '@mui/material/Chip' {
@@ -57,6 +60,25 @@ function readableOnDark(color: string, minContrast: number) {
   return result;
 }
 
+/**
+ * No modo claro, o contrário: uma cor de clínica clara (amarelo, verde-água) some como texto,
+ * borda ou ícone sobre o fundo branco. Escurece aos poucos até o contraste mínimo; cores já
+ * escuras ficam como estão. As superfícies grandes de marca (menu lateral, botão preenchido,
+ * login) continuam com a cor original (`palette.brand`).
+ */
+function readableOnLight(color: string, minContrast: number) {
+  let result = color;
+  for (let step = 0; step < 10 && getContrastRatio(result, SURFACES.light.paper) < minContrast; step++) {
+    result = darken(result, 0.12);
+  }
+  return result;
+}
+
+/** Texto branco ou quase preto sobre a cor, pelo mesmo critério AA do tema (4,5:1). */
+function getContrastText(background: string) {
+  return getContrastRatio(background, '#fff') >= 4.5 ? '#fff' : 'rgba(0, 0, 0, 0.87)';
+}
+
 export interface ThemeColors {
   primaryColor?: string | null;
   secondaryColor?: string | null;
@@ -68,6 +90,11 @@ export function createAppTheme({ primaryColor, secondaryColor, mode = 'light' }:
   const surface = SURFACES[mode];
   const primary = validColor(primaryColor, DEFAULT_PRIMARY);
   const secondary = validColor(secondaryColor, DEFAULT_SECONDARY);
+  // Texto 4,5:1 (AA) no claro; no escuro, 6:1, como antes.
+  const primaryMain = dark ? readableOnDark(primary, 6) : readableOnLight(primary, 4.5);
+  // Marca clara ajustada no modo claro: o botão preenchido volta à cor original, com o texto de
+  // contraste dela (a versão escurecida serve para texto e bordas, não para a superfície).
+  const brandFill = !dark && primaryMain !== primary;
 
   return createTheme(
     {
@@ -75,9 +102,10 @@ export function createAppTheme({ primaryColor, secondaryColor, mode = 'light' }:
         mode,
         // Texto preto ou branco sobre a cor da clínica pelo critério de acessibilidade (AA, 4,5:1), não 3:1.
         contrastThreshold: 4.5,
-        primary: { main: dark ? readableOnDark(primary, 6) : primary },
-        secondary: { main: dark ? readableOnDark(secondary, 3) : secondary },
+        primary: { main: primaryMain },
+        secondary: { main: dark ? readableOnDark(secondary, 3) : readableOnLight(secondary, 3) },
         purple: PURPLE[mode],
+        brand: primary,
         background: { default: surface.default, paper: surface.paper },
         divider: surface.border,
       },
@@ -87,7 +115,25 @@ export function createAppTheme({ primaryColor, secondaryColor, mode = 'light' }:
         button: { textTransform: 'none', fontWeight: 600 },
       },
       components: {
-        MuiButton: { defaultProps: { disableElevation: true } },
+        MuiButton: {
+          defaultProps: { disableElevation: true },
+          styleOverrides: brandFill
+            ? {
+                root: {
+                  variants: [
+                    {
+                      props: { variant: 'contained', color: 'primary' },
+                      style: {
+                        backgroundColor: primary,
+                        color: getContrastText(primary),
+                        '&:hover': { backgroundColor: darken(primary, 0.08) },
+                      },
+                    },
+                  ],
+                },
+              }
+            : undefined,
+        },
         MuiTextField: { defaultProps: { fullWidth: true } },
         MuiPaper: {
           defaultProps: { elevation: 0 },

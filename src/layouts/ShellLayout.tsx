@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { NavLink, Outlet, useNavigate, useNavigation } from 'react-router';
+import { NavLink, Outlet, useNavigate } from 'react-router';
 import {
   AppBar,
   Avatar,
@@ -7,7 +7,6 @@ import {
   Divider,
   Drawer,
   IconButton,
-  LinearProgress,
   List,
   ListItemButton,
   ListItemIcon,
@@ -22,7 +21,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { alpha, darken, getContrastRatio, type Theme } from '@mui/material/styles';
 import AccountCircleOutlined from '@mui/icons-material/AccountCircleOutlined';
 import DarkModeOutlined from '@mui/icons-material/DarkModeOutlined';
 import Logout from '@mui/icons-material/Logout';
@@ -36,6 +35,27 @@ import { useColorMode } from '@/theme/colorMode';
 import { ClosureBanner } from '@/pages/settings/closure/ClosureBanner';
 import { SubscriptionBanner } from '@/pages/settings/subscription/SubscriptionBanner';
 import type { NavSection } from './navigation';
+
+/**
+ * Cores do menu lateral: a cor primária da clínica de fundo, para a marca aparecer em toda tela.
+ * No escuro, a cor original da marca escurecida até o texto branco ter contraste AA: o menu fica
+ * escuro como o resto da tela, mas com a cor da clínica (a versão clareada do tema perderia a
+ * saturação). No claro, a cor original da marca, com o texto de contraste do tema (preto ou branco, AA).
+ */
+function navColors(theme: Theme) {
+  if (theme.palette.mode === 'light') {
+    // A cor original: no claro, `primary.main` pode vir escurecida (marca clara demais para texto).
+    const bg = theme.palette.brand;
+    return { bg, fg: theme.palette.getContrastText(bg) };
+  }
+  let amount = 0.35;
+  let bg = darken(theme.palette.brand, amount);
+  while (getContrastRatio(bg, '#fff') < 4.5 && amount < 0.9) {
+    amount += 0.05;
+    bg = darken(theme.palette.brand, amount);
+  }
+  return { bg, fg: '#fff' };
+}
 
 const DRAWER_WIDTH = 260;
 const COLLAPSED_WIDTH = 96;
@@ -79,8 +99,6 @@ export function ShellLayout({ navigation, areaLabel, search }: ShellLayoutProps)
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsedPreference, toggleCollapsed] = useSidebarCollapsed();
-  // Telas são carregadas sob demanda: indica o download do código da próxima tela.
-  const navigating = useNavigation().state !== 'idle';
 
   // No celular o menu é temporário e sempre abre completo.
   const collapsed = isDesktop && collapsedPreference;
@@ -90,14 +108,24 @@ export function ShellLayout({ navigation, areaLabel, search }: ShellLayoutProps)
     duration: theme.transitions.duration.shorter,
   });
 
+  const colors = navColors(theme);
   const drawerPaperSx = {
-    '& .MuiDrawer-paper': { width: navWidth, boxSizing: 'border-box', overflowX: 'hidden', transition: widthTransition },
+    '& .MuiDrawer-paper': {
+      width: navWidth,
+      boxSizing: 'border-box',
+      overflowX: 'hidden',
+      transition: widthTransition,
+      bgcolor: colors.bg,
+      color: colors.fg,
+      borderRight: 0,
+    },
   } as const;
   const drawer = (
     <SideNav
       navigation={navigation}
       areaLabel={areaLabel}
       collapsed={collapsed}
+      colors={colors}
       onNavigate={() => setMobileOpen(false)}
     />
   );
@@ -115,9 +143,6 @@ export function ShellLayout({ navigation, areaLabel, search }: ShellLayoutProps)
           bgcolor: 'background.paper',
         }}
       >
-        {navigating && (
-          <LinearProgress sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3 }} aria-label="Carregando" />
-        )}
         <Toolbar>
           {!isDesktop && (
             <>
@@ -196,14 +221,18 @@ function SideNav({
   navigation,
   areaLabel,
   collapsed,
+  colors,
   onNavigate,
 }: {
   navigation: NavSection[];
   areaLabel?: string;
   /** Recolhido: só o ícone, com o rótulo curto embaixo. */
   collapsed: boolean;
+  colors: { bg: string; fg: string };
   onNavigate: () => void;
 }) {
+  const muted = alpha(colors.fg, 0.72);
+  const line = alpha(colors.fg, 0.16);
   const { can } = useAuth();
 
   const sections = navigation
@@ -220,23 +249,25 @@ function SideNav({
           gap: 0.25,
         }}
       >
-        <BrandMark hideName={collapsed} />
+        <BrandMark hideName={collapsed} avatarColors={{ bg: colors.fg, fg: colors.bg }} />
         {areaLabel && (
-          <Typography variant="caption" color="text.secondary" sx={{ pl: collapsed ? 0 : 6 }}>
+          <Typography variant="caption" sx={{ pl: collapsed ? 0 : 6, color: muted }}>
             {areaLabel}
           </Typography>
         )}
       </Toolbar>
-      <Divider />
+      <Divider sx={{ borderColor: line }} />
       {sections.map((section, index) => (
         <List
           key={section.title ?? index}
           subheader={
             !section.title ? undefined : collapsed ? (
               // O título da seção não cabe: a divisória mantém a separação dos grupos.
-              <Divider sx={{ mx: 1, mb: 1 }} />
+              <Divider sx={{ mx: 1, mb: 1, borderColor: line }} />
             ) : (
-              <ListSubheader disableSticky>{section.title}</ListSubheader>
+              <ListSubheader disableSticky sx={{ bgcolor: 'transparent', color: muted }}>
+                {section.title}
+              </ListSubheader>
             )
           }
           sx={{ px: collapsed ? 0.75 : 1 }}
@@ -256,15 +287,12 @@ function SideNav({
                   borderRadius: 2,
                   mb: 0.5,
                   ...(collapsed && { flexDirection: 'column', gap: 0.5, px: 0.5, py: 1, textAlign: 'center' }),
-                  '&.active': {
-                    // No escuro, o cinza de seleção apaga a cor da clínica: usa um fundo tingido com ela.
-                    bgcolor: (theme) =>
-                      theme.palette.mode === 'dark'
-                        ? alpha(theme.palette.primary.main, 0.14)
-                        : theme.palette.action.selected,
-                    color: 'primary.main',
-                    '& .MuiListItemIcon-root': { color: 'primary.main' },
-                  },
+                  color: muted,
+                  '& .MuiListItemIcon-root': { color: 'inherit' },
+                  '&:hover': { bgcolor: alpha(colors.fg, 0.1), color: colors.fg },
+                  // Fundo na própria cor do texto (translúcido): funciona sobre qualquer cor de clínica.
+                  '&.active, &.active:hover': { bgcolor: alpha(colors.fg, 0.18), color: colors.fg },
+                  '&.active .MuiListItemText-primary': { fontWeight: 600 },
                 }}
               >
                 <ListItemIcon sx={{ minWidth: collapsed ? 0 : 40, justifyContent: 'center' }}>{item.icon}</ListItemIcon>
